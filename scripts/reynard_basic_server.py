@@ -1,11 +1,21 @@
 import Queue
+import signal
+import tornado
+import logging
 from optparse import OptionParser
 from reynard.servers import NodeServer,ManagementNode
 
+log = logging.getLogger('reynard.basic_server')
 
 class Config(object):
     VOLUMES = [("root","/"),]
     NODES = [("localhost",1235),]
+
+@tornado.gen.coroutine
+def on_shutdown(ioloop, server):
+    log.info("Shutting down server")
+    yield server.stop()
+    ioloop.stop()
 
 if __name__ == "__main__":
 
@@ -18,33 +28,14 @@ if __name__ == "__main__":
     parser.add_option('-s', '--server_type', dest='server_type', type=str, default="NodeServer",
                       help='server type to start')
     (opts, args) = parser.parse_args()
-
-    print "Server listening on port %d, Ctrl-C to terminate server" % opts.port
-    restart_queue = Queue.Queue()
+    log.info("Starting {opts.server_type} instance listening on port "
+        "{opts.port}, Ctrl-C to terminate server".format(**locals()))
+    ioloop = tornado.ioloop.IOLoop.current()
     if opts.server_type == "NodeServer":
         server = NodeServer(opts.host, opts.port, Config())
     elif opts.server_type == "ManagementNode":
         server = ManagementNode(opts.host, opts.port, Config())
-
-    server.set_restart_queue(restart_queue)
-
-    server.start()
-    print "Started."
-
-    try:
-        while True:
-            try:
-                device = restart_queue.get(timeout=0.5)
-            except Queue.Empty:
-                device = None
-            if device is not None:
-                print "Stopping ..."
-                device.stop()
-                device.join()
-                print "Restarting ..."
-                device.start()
-                print "Started."
-    except KeyboardInterrupt:
-        print "Shutting down ..."
-        server.stop()
-        server.join()
+    signal.signal(signal.SIGINT, lambda sig, frame: ioloop.add_callback_from_signal(
+        on_shutdown, ioloop, server))
+    ioloop.add_callback(server.start)
+    ioloop.start()
