@@ -1,8 +1,11 @@
 import logging
+from tornado.gen import coroutine, Return
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete
 from katcp.resource_client import KATCPClientResource
+from katcp.ioloop_manager import with_relative_timeout
 from reynard.monitors import DiskMonitor,CpuMonitor,MemoryMonitor
+
 
 log = logging.getLogger("reynard.server")
 
@@ -27,7 +30,7 @@ class NodeServer(AsyncDeviceServer):
         def status_query():
             # go and find out the status of all
             # subordinates.
-            req.reply("ok", "nominal")
+            req.reply("ok", "degraded")
 
         self.ioloop.add_callback(status_query)
         raise AsyncReply
@@ -131,13 +134,35 @@ class ManagementNode(NodeServer):
         Currently this is a dummy function to test chaining
         async calls.
         """
-        req.inform("Seeking status from clients")
-        status_response = self.ioloop.add_callback(self._clients.values()[0].req.device_status)
-
+        @coroutine
         def status_handler():
-            status = yield status_response
-            req.reply("ok",status)
-
+            futures = {}
+            for name,client in self._clients.items():
+                future = client.req.device_status()
+                futures[name] = future
+            statuses = {}
+            for name,future in futures.items():
+                with_relative_timeout(2,future)
+                status = yield future
+                if not status:
+                    req.inform("Warning {name} status request failed: {msg}".format(
+                        name=name,msg=str(status)))
+                reply = status.reply
+                status_message = reply.arguments[1]
+                req.inform("Client {name} state: {msg}".format(
+                    name=name,msg=status_message))
+                statuses[name] = reply.arguments[1] == "ok"
+            passes = [success for name,success in statuses.items()]
+            if all(passes):
+                req.reply("ok","ok")
+            else:
+                # some policy for degradation needs to be determined based on
+                # overall instrument capability. Maybe fraction of beams x bandwidth?
+                fail_count = len(passes)-sum(passes)
+                if fail_count > 1:
+                    req.reply("ok","fail")
+                else:
+                    req.reply("ok","degraded")
         self.ioloop.add_callback(status_handler)
         raise AsyncReply
 

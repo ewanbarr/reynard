@@ -28,7 +28,7 @@ if __name__ == "__main__":
                       help='server type to start')
     (opts, args) = parser.parse_args()
     log.info("Starting {opts.server_type} instance listening on port "
-        "{opts.port}, Ctrl-C to terminate server".format(**locals()))
+        "{opts.port}, Ctrl-C to terminate server".format(opts=opts))
     ioloop = tornado.ioloop.IOLoop.current()
     if opts.server_type == "NodeServer":
         server = NodeServer(opts.host, opts.port, Config())
