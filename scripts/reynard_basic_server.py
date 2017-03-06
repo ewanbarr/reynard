@@ -18,7 +18,6 @@ def on_shutdown(ioloop, server):
     ioloop.stop()
 
 if __name__ == "__main__":
-
     usage = "usage: %prog [options]"
     parser = OptionParser(usage=usage)
     parser.add_option('-a', '--host', dest='host', type="string", default="", metavar='HOST',
