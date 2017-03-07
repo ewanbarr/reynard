@@ -6,7 +6,6 @@ from katcp.resource_client import KATCPClientResource
 from katcp.ioloop_manager import with_relative_timeout
 from reynard.monitors import DiskMonitor,CpuMonitor,MemoryMonitor
 
-
 log = logging.getLogger("reynard.server")
 
 class NodeServer(AsyncDeviceServer):
@@ -163,6 +162,7 @@ class ManagementNode(NodeServer):
                     req.reply("ok","fail")
                 else:
                     req.reply("ok","degraded")
+
         self.ioloop.add_callback(status_handler)
         raise AsyncReply
 
