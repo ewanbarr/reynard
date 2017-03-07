@@ -28,8 +28,8 @@ def decode_katcp_message(s):
 
 
 class StreamClient(DeviceClient):
-    def __init__(self,server_host, server_port,*args,**kwargs):
-        self.stream = kwargs.get("stream",sys.stdout)
+    def __init__(self, server_host, server_port, stream=sys.stdout):
+        self.stream = stream
         super(StreamClient,self).__init__(server_host, server_port)
 
     def to_stream(self,prefix,msg):
