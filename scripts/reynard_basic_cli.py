@@ -72,11 +72,19 @@ class KatcpCli(Cmd):
         @param      arg   Target server address in form "host:port"
         """
         try:
-            self.host,self.port = arg.split(":")
+            host,port = arg.split(":")
         except Exception:
             print "Usage: connect <host>:<port>"
-        self.stop_client()
-        self.start_client()
+            return
+        try:
+            app = KatcpCli(host,port)
+            app.cmdloop()
+        except Exception as error:
+            log.exception("Error from CLI")
+        finally:
+            app.stop_client()
+        #self.stop_client()
+        #self.start_client()
 
 
 if __name__ == "__main__":

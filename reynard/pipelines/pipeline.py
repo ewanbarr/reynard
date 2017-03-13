@@ -7,7 +7,7 @@ from threading import Thread, Event, Lock
 
 log = logging.getLogger("reynard.pipelines")
 
-STATES = ["idle","configuring","ready",
+PIPELINE_STATES = ["idle","configuring","ready",
     "starting","running","stopping",
     "deconfiguring","failed"]
 
@@ -38,8 +38,9 @@ def reynard_pipeline(name,description="",version="",requires_nvidia=False):
             log.warning("Conflicting pipeline names '{0}'".format(name))
         PIPELINE_REGISTRY[name] = {
         "description":description,
-        "version":version,
-        "requires_nvidia":requires_nvidia
+        "requires_nvidia":requires_nvidia,
+        "version":"",
+        "class":cls
         }
         return cls
     return wrap
@@ -76,7 +77,7 @@ class Watchdog(Thread):
                 log.debug("Watchdog standing down on container '{0}'".format(self._name))
                 break
             elif self._is_dead(event):
-                exit_code = event["Actor"]["Attributes"]["exitCode"]
+                exit_code = int(event["Actor"]["Attributes"]["exitCode"])
                 log.debug("Watchdog activated on container '{0}'".format(self._name))
                 self._callback(exit_code)
 
@@ -111,8 +112,13 @@ class Pipeline(Stateful):
 
     def _set_watchdog(self, name, persistent=False):
         def callback(exit_code):
+            log.info("Watchdog recieved exit code {1} from '{0}'".format(name,exit_code))
             if persistent or exit_code != 0:
+                log.info("WATCHDOG FAILURE")
                 self.stop(failed=True)
+            else:
+                log.info("WATCHDOG STOPPING")
+                self.stop()
         guard = Watchdog(name,self._standdown,callback)
         guard.start()
         self._watchdogs.append(guard)
@@ -123,6 +129,7 @@ class Pipeline(Stateful):
         except Exception as error:
             log.exception(str(error))
             self.state = "failed"
+            raise error
         else:
             self.state = next_state
 
@@ -157,6 +164,7 @@ class Pipeline(Stateful):
             if self.state != "ready":
                 raise PipelineError("Pipeline can only be started from ready state")
             self.state = "starting"
+            self._standdown.clear()
             self._call("running",self._start)
 
     def _start(self):
@@ -179,9 +187,21 @@ class Pipeline(Stateful):
                 return self._status()
             except Exception as error:
                 log.error(str(error))
+                raise PipelineError("Could not retrieve status [error: {0}]".format(str(error)))
 
     def _status(self):
         raise NotImplementedError
+
+    def reset(self):
+        try:
+            self._deconfigure()
+        except:
+            pass
+        try:
+            self._stop()
+        except:
+            pass
+        self.state = "idle"
 
 
 class DockerHelper(object):
@@ -189,11 +209,21 @@ class DockerHelper(object):
         self._client = docker.from_env()
 
     def run(self, *args, **kwargs):
-        return self._client.containers.run(*args,**kwargs)
+        try:
+            return self._client.containers.run(*args,**kwargs)
+        except Exception as error:
+            raise PipelineError("Error starting container args='{0}' and kwargs='{1}' [error: {2}]".format(
+                repr(args),repr(kwargs),str(error)))
 
     def run_nvidia(self, *args, **kwargs):
-        kwargs.update(nvidia_config())
+        try:
+            kwargs.update(nvidia_config())
+        except Exception as error:
+            raise PipelineError("Error retrieving Nvidia configuration [error: {0}]".format(str(error)))
         return _run_container(*args,**kwargs)
+
+    def get(self, name):
+        return self._client.containers.get(name)
 
 
 
