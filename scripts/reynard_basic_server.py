@@ -4,9 +4,10 @@ import tornado
 import logging
 from optparse import OptionParser
 from reynard.servers import NodeServer,ManagementNode,PipelineDispatchServer,PipelineServer
+from reynard.effelsberg.servers import StatusServer,EffCAMServer
 from reynard.pipelines import PIPELINE_REGISTRY
 
-log = logging.getLogger('reynard.basic_server')
+log = logging.getLogger("reynard.basic_server")
 
 class Config(object):
     VOLUMES = [("root","/"),]
@@ -21,7 +22,7 @@ def on_shutdown(ioloop, server):
 if __name__ == "__main__":
 
     FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
-    logger = logging.getLogger('root')
+    logger = logging.getLogger('reynard')
     logging.basicConfig(format=FORMAT)
     logger.setLevel(logging.DEBUG)
 
@@ -44,6 +45,10 @@ if __name__ == "__main__":
         server = PipelineDispatchServer(opts.host, opts.port)
     elif opts.server_type == "PipelineServer":
         server = PipelineServer(opts.host, opts.port, PIPELINE_REGISTRY["TestPipeline"]["class"])
+    elif opts.server_type == "StatusServer":
+        server = StatusServer(opts.host, opts.port)
+    elif opts.server_type == "EffCAMServer":
+        server = EffCAMServer(opts.host, opts.port)
     else:
         raise Exception("Unknown pipeline type")
     signal.signal(signal.SIGINT, lambda sig, frame: ioloop.add_callback_from_signal(

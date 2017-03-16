@@ -9,6 +9,7 @@ setup(name='reynard',
                 'reynard.pipelines',
                 'reynard.effelsberg',
                 'reynard.effelsberg.paf',
+                'reynard.effelsberg.servers',
                 'reynard.meerkat'],
       scripts=['scripts/reynard_basic_cli.py',
                'scripts/reynard_basic_server.py']

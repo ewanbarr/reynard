@@ -195,12 +195,12 @@ class Pipeline(Stateful):
     def reset(self):
         try:
             self._deconfigure()
-        except:
-            pass
+        except Exception as error:
+            log.warning("Error caught during reset call: {0}".format(str(error)))
         try:
             self._stop()
         except:
-            pass
+            log.warning("Error caught during reset call: {0}".format(str(error)))
         self.state = "idle"
 
 

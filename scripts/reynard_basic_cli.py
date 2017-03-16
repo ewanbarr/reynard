@@ -83,8 +83,6 @@ class KatcpCli(Cmd):
             log.exception("Error from CLI")
         finally:
             app.stop_client()
-        #self.stop_client()
-        #self.start_client()
 
 
 if __name__ == "__main__":

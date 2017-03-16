@@ -2,12 +2,12 @@ import logging
 import json
 from tornado.gen import coroutine, Return
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
-from katcp.kattypes import request, return_reply, Int, Str, Discrete
+from katcp.kattypes import request, return_reply, Int, Str, Discrete, Address, Struct
 from katcp.resource_client import KATCPClientResource
 from katcp.ioloop_manager import with_relative_timeout
 from reynard.monitors import DiskMonitor,CpuMonitor,MemoryMonitor
 from reynard.pipelines import PIPELINE_REGISTRY, PIPELINE_STATES, PipelineError
-
+from reynard.utils import doc_inherit
 
 class PipelineServer(AsyncDeviceServer):
     VERSION_INFO = ("reynard-pipelineserver-api",0,1)
@@ -17,8 +17,8 @@ class PipelineServer(AsyncDeviceServer):
         self._pipeline = None
         super(PipelineServer,self).__init__(server_host, server_port)
 
+    @doc_inherit
     def setup_sensors(self):
-        """Setup sensors."""
         self._pipeline_status = Sensor.discrete("status",
             description = "status of pipeline",
             params = PIPELINE_STATES,
@@ -134,7 +134,7 @@ class PipelineDispatchServer(AsyncDeviceServer):
         return ("ok",response)
 
     @request(Str(),Str())
-    @return_reply(Str())
+    @return_reply(Address())
     def request_pipeline_create(self, req, name, pipeline_name):
         """Create a PipelineServer instance"""
         @coroutine
@@ -146,7 +146,8 @@ class PipelineDispatchServer(AsyncDeviceServer):
                 #self.ioloop.add_callback(server.start)
                 #self.ioloop.add_callback(lambda: req.reply("ok",str(server.bind_address)))
                 server.start()
-                req.reply("ok",str(server.bind_address))
+                req.inform("Server started at {0}:{1}".format(*server.bind_address))
+                req.reply("ok",Address(server.bind_address))
             else:
                 req.reply("fail","No pipeline named '{0}' available".format(pipeline_name))
         self.ioloop.add_callback(create_pipeline_server)
@@ -172,6 +173,8 @@ class PipelineDispatchServer(AsyncDeviceServer):
             return ("ok","ok")
         else:
             return ("fail","No pipeline named '{0}'".format(name))
+
+
 
 
 

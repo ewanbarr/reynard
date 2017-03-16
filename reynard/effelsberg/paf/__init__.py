@@ -1,1 +1,1 @@
-import servers
+from interface_server import PafInterfaceServer

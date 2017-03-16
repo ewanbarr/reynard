@@ -32,30 +32,6 @@ class PafInterfaceServer(AsyncDeviceServer):
         #    controlled=True))
         #self.paf_client.start()
 
-    @request()
-    @return_reply(Str())
-    def request_arm(self, req):
-        """Return the status of the instrument"""
-
-        @coroutine
-        def arm_query():
-            req.reply("ok","armed")
-
-        self.ioloop.add_callback(arm_query)
-        raise AsyncReply
-
-    @request()
-    @return_reply(Str())
-    def request_disarm(self, req):
-        """Return the status of the instrument"""
-
-        @coroutine
-        def disarm_query():
-            req.reply("ok","disarmed")
-
-        self.ioloop.add_callback(disarm_query)
-        raise AsyncReply
-
     @request(Str())
     @return_reply(Str())
     def request_configure(self, req, config):

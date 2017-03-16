@@ -5,6 +5,7 @@ from katcp.kattypes import request, return_reply, Int, Str, Discrete
 from katcp.resource_client import KATCPClientResource
 from katcp.ioloop_manager import with_relative_timeout
 from reynard.monitors import DiskMonitor,CpuMonitor,MemoryMonitor
+from reynard.utils import doc_inherit
 
 log = logging.getLogger("reynard.server")
 
