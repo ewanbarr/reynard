@@ -9,8 +9,8 @@ from subprocess import Popen,PIPE
 log = logging.getLogger("reynard.monitor.memory")
 
 class MemoryMonitor(Monitor):
-    def __init__(self,polling_interval=1):
-        super(MemoryMonitor,self).__init__(polling_interval)
+    def __init__(self):
+        super(MemoryMonitor,self).__init__()
         for node in get_meminfo().keys():
             name_ = "%s_memory_size"%node
             self._sensors[name_] = Sensor.float(name_,
@@ -35,7 +35,9 @@ class MemoryMonitor(Monitor):
                 status = Sensor.WARN
             else:
                 status = Sensor.NOMINAL
+            log.debug("%s_memory_size: %.2f MB"%(node,info[node]["MemTotal"]))
             self._sensors["%s_memory_size"%node].set_value(info[node]["MemTotal"])
+            log.debug("%s_memory_avail: %.2f MB"%(node,info[node]["MemFree"]))
             self._sensors["%s_memory_avail"%node].set_value(info[node]["MemFree"],status)
 
 def get_meminfo():
@@ -69,5 +71,9 @@ def numastat_meminfo():
 
 if __name__ == "__main__":
     from reynard.monitors.monitor import monitor_test
+    FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
+    logger = logging.getLogger('reynard')
+    logging.basicConfig(format=FORMAT)
+    logger.setLevel(logging.DEBUG)
     monitor_test(MemoryMonitor())
 

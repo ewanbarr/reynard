@@ -9,6 +9,8 @@ from reynard.monitors import DiskMonitor,CpuMonitor,MemoryMonitor
 from reynard.pipelines import PIPELINE_REGISTRY, PIPELINE_STATES, PipelineError
 from reynard.utils import doc_inherit
 
+log = logging.getLogger("reynard.pipeline_server")
+
 class PipelineServer(AsyncDeviceServer):
     VERSION_INFO = ("reynard-pipelineserver-api",0,1)
     BUILD_INFO = ("reynard-pipelineserver-implementation",0,1,"rc1")
