@@ -1,4 +1,4 @@
-import Queue
+#!/usr/bin/env python
 import signal
 import tornado
 import logging
