@@ -1,0 +1,35 @@
+{
+    "nodes": [
+    {% for node in nodes%}
+    {
+        "name": "{{node}}",
+        "pipelines":
+        [
+            {% for n in range(2)%}
+            {
+                "pipeline_name":"{{pipeline_name}}",
+                "processing_config":
+                {
+                    "obs_id":"{{obs_id}}",
+                    "numa_node":{{n%2}},
+                    "workspace":"/workspace/{{obs_id}}/{{'02%d'%n}}/"
+                    "output_path":"/data/{{obs_id}}/{{node}}/{{'02%d'%n}}"
+                },
+                "observation_details":
+                {
+                    "obs_id":"{{obs_id}}",
+                    "beam_id":"{{beam.id}}",
+                    "raj":"{{beam.raj}}",
+                    "decj":"{{beam.decj}}",
+                    "frequency":{{beam.frequency}},
+                    "bandwidth":{{beam.bandwidth}}
+                }
+            }
+            {% if not loop.last %},{% endif %}
+            {% endfor %}
+        ]
+    }
+    {% if not loop.last %},{% endif %}
+    {% endfor %}
+    ]
+}

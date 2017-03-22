@@ -3,8 +3,8 @@ import signal
 import tornado
 import logging
 from optparse import OptionParser
-from reynard.servers import NodeServer,ManagementNode,PipelineDispatchServer,PipelineServer
-from reynard.effelsberg.servers import StatusServer,EffCAMServer
+from reynard.servers import UniversalBackendNode,UniversalBackendInterface,PipelineServer
+from reynard.effelsberg.servers import StatusServer,EffCAMServer, JsonStatusServer
 from reynard.pipelines import PIPELINE_REGISTRY
 
 log = logging.getLogger("reynard.basic_server")
@@ -28,25 +28,25 @@ if __name__ == "__main__":
 
     usage = "usage: %prog [options]"
     parser = OptionParser(usage=usage)
-    parser.add_option('-a', '--host', dest='host', type="string", default="", metavar='HOST',
+    parser.add_option('-H', '--host', dest='host', type="string", default="", metavar='HOST',
                       help='listen to HOST (default="" - all hosts)')
     parser.add_option('-p', '--port', dest='port', type=long, default=0, metavar='N',
                       help='attach to port N (default=0)')
-    parser.add_option('-s', '--server_type', dest='server_type', type=str, default="NodeServer",
+    parser.add_option('-s', '--server_type', dest='server_type', type=str, default="UniversalBackendNode",
                       help='server type to start')
     (opts, args) = parser.parse_args()
     log.info("Starting {opts.server_type} instance".format(opts=opts))
     ioloop = tornado.ioloop.IOLoop.current()
-    if opts.server_type == "NodeServer":
-        server = NodeServer(opts.host, opts.port, Config())
-    elif opts.server_type == "ManagementNode":
-        server = ManagementNode(opts.host, opts.port, Config())
-    elif opts.server_type == "PipelineDispatchServer":
-        server = PipelineDispatchServer(opts.host, opts.port)
+    if opts.server_type == "UniversalBackendNode":
+        server = UniversalBackendNode(opts.host, opts.port, Config())
+    elif opts.server_type == "UniversalBackendInterface":
+        server = UniversalBackendInterface(opts.host, opts.port, Config())
     elif opts.server_type == "PipelineServer":
         server = PipelineServer(opts.host, opts.port, PIPELINE_REGISTRY["TestPipeline"]["class"])
     elif opts.server_type == "StatusServer":
         server = StatusServer(opts.host, opts.port)
+    elif opts.server_type == "JsonStatusServer":
+        server = JsonStatusServer(opts.host, opts.port)
     elif opts.server_type == "EffCAMServer":
         server = EffCAMServer(opts.host, opts.port)
     else:

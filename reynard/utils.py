@@ -17,6 +17,9 @@ ESCAPE_SEQUENCE_RE = re.compile(r'''
     | \\[\\'"abfnrtv]  # Single-character escapes
     )''', re.UNICODE | re.VERBOSE)
 
+def escape_string(s):
+    return s.replace(" ","\_")
+
 def unescape_string(s):
     def decode_match(match):
         return codecs.decode(match.group(0), 'unicode-escape')

@@ -1,19 +1,21 @@
 import logging
+import socket
+import json
 from tornado.gen import coroutine, Return
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete
 from katcp.resource_client import KATCPClientResource
 from katcp.ioloop_manager import with_relative_timeout
 from reynard.monitors import DiskMonitor,CpuMonitor,MemoryMonitor
-from reynard.utils import doc_inherit
+from reynard.utils import doc_inherit, unescape_string
+
+DEFAULT_NODE_PORT = 5000
 
 log = logging.getLogger("reynard.ubi_server")
 
 class UniversalBackendInterface(AsyncDeviceServer):
     """Katcp server for cluster head nodes.
 
-    Notes: This is the basis of the top level
-           interface for FBF/APSUSE.
     """
     VERSION_INFO = ("reynard-ubi-api",0,1)
     BUILD_INFO = ("reynard-ubi-implementation",0,1,"rc1")
@@ -35,12 +37,6 @@ class UniversalBackendInterface(AsyncDeviceServer):
         set up.
         """
         super(ManagementNode,self).start()
-        self.ioloop.add_callback(self._setup_nodes)
-
-    def _setup_nodes(self):
-        """Setup nodes based on configuration object."""
-        for node,port in self._config.NODES:
-            self._add_node(node,'127.0.0.1', port)
 
     def _add_node(self,name,ip,port):
         """Add a named node."""
@@ -61,6 +57,51 @@ class UniversalBackendInterface(AsyncDeviceServer):
         self._nodes[name].join()
         del self._nodes[name]
 
+    @request(Str())
+    @return_reply(Str())
+    def request_configure(self, req, config):
+        """config"""
+        @coroutine
+        def configure(config):
+            for node in config["nodes"]:
+                pass
+
+        try:
+            config = json.loads(unescape_string(config))
+        except Exception as error:
+            return ("fail",str(error))
+
+        self.ioloop.add_callback(lambda: configure(config))
+
+        raise AsyncReply
+
+    @request()
+    @return_reply(Str())
+    def request_start(self, req):
+        """start"""
+        @coroutine
+        def start():
+            pass
+        raise AsyncReply
+
+    @request()
+    @return_reply(Str())
+    def request_stop(self, req):
+        """stop"""
+        @coroutine
+        def stop():
+            pass
+        raise AsyncReply
+
+    @request()
+    @return_reply(Str())
+    def request_deconfigure(self, req):
+        """deconfig"""
+        @coroutine
+        def deconfigure():
+            pass
+        raise AsyncReply
+
     @request(Str(),Str(),Int())
     @return_reply(Str())
     def request_node_add(self, req, name, ip, port):
@@ -76,7 +117,7 @@ class UniversalBackendInterface(AsyncDeviceServer):
     def request_node_remove(self, req, name):
         """Add a new node."""
         try:
-            self._remove_node(name,ip,port)
+            self._remove_node(name)
         except KeyError,e:
             return ("fail",str(e))
         return ("ok","removed node")
