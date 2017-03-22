@@ -268,7 +268,7 @@ class JsonStatusServer(AsyncDeviceServer):
             if params["type"] == "float":
                 sensor = Sensor.float(name,
                     description = params["description"],
-                    units = params.get("units",None),
+                    unit = params.get("units",None),
                     default = params.get("default",0.0),
                     initial_status=Sensor.UNKNOWN)
             elif params["type"] == "string":
@@ -280,6 +280,7 @@ class JsonStatusServer(AsyncDeviceServer):
                 sensor = Sensor.integer(name,
                     description = params["description"],
                     default = params.get("default",0),
+                    unit = params.get("units",None),
                     initial_status=Sensor.UNKNOWN)
             elif params["type"] == "bool":
                 sensor = Sensor.boolean(name,
