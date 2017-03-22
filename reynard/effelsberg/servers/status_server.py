@@ -277,12 +277,12 @@ class JsonStatusServer(AsyncDeviceServer):
                     description = params["description"],
                     default = params.get("default",""),
                     initial_status=Sensor.UNKNOWN)
-            elif params["type"] = "int":
+            elif params["type"] == "int":
                 sensor = Sensor.integer(name,
                     description = params["description"],
                     default = params.get("default",0),
                     initial_status=Sensor.UNKNOWN)
-            elif params["type"] = "bool":
+            elif params["type"] == "bool":
                 sensor = Sensor.boolean(name,
                     description = params["description"],
                     default = params.get("default",False),
