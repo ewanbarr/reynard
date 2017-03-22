@@ -34,7 +34,7 @@ RUN apt-get update -y && \
 RUN cd soft && \
     git clone https://github.com/ewanbarr/reynard.git && \
     cd reynard && \
-    git checkout dev && \
+    git checkout json_effcam && \
     python setup.py install
 
 ENV PATH ${PATH}:/usr/local/bin

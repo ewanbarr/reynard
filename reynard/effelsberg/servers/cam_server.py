@@ -147,7 +147,7 @@ class EffController(object):
         self.status.set_value("starting")
         self.sensors.scannum.set_sampling_strategy('event')
         self.sensors.subscannum.set_sampling_strategy('event')
-        self.sensors.status.set_sampling_strategy('event')
+        self.sensors.observing.set_sampling_strategy('event')
         yield self.sensors.scannum.get_value()
         self.sensors.scannum.register_listener(self.scan_handler)
         log.debug("starting controller")
@@ -157,24 +157,24 @@ class EffController(object):
     def stop(self):
         self.status.set_value("stopping")
         self.sensors.scannum.unregister_listener(self.scan_handler)
-        self.sensors.status.unregister_listener(self.not_observing_status_handler)
-        self.sensors.status.unregister_listener(self.observing_status_handler)
+        self.sensors.observing.unregister_listener(self.not_observing_status_handler)
+        self.sensors.observing.unregister_listener(self.observing_status_handler)
         self.sensors.scannum.unregister_listener(self.subscan_handler)
         self.sensors.scannum.set_sampling_strategy('none')
         self.sensors.subscannum.set_sampling_strategy('none')
-        self.sensors.status.set_sampling_strategy('none')
+        self.sensors.observing.set_sampling_strategy('none')
         log.debug("stopping controller")
         log.debug("stopping all active observations")
         self.status.set_value("idle")
 
     @coroutine
     def observing_status_handler(self,rt,t,status,value):
-        if value != "Observing":
+        if not value:
             return
         self.status.set_value("starting_backends")
         log.debug("Telescope entered 'Observing' state: Triggering observation start")
-        self.sensors.status.unregister_listener(self.observing_status_handler)
-        self.sensors.status.register_listener(self.not_observing_status_handler)
+        self.sensors.observing.unregister_listener(self.observing_status_handler)
+        self.sensors.observing.register_listener(self.not_observing_status_handler)
         log.debug("Registering status change handler")
         self.status.set_value("waiting_status_change_from_observe")
 
@@ -183,7 +183,7 @@ class EffController(object):
         self.status.set_value("stopping_backends")
         log.debug("Telescope state changed to '{0}'".format(value))
         log.debug("Deregistering status change handler")
-        self.sensors.status.unregister_listener(self.not_observing_status_handler)
+        self.sensors.observing.unregister_listener(self.not_observing_status_handler)
         log.debug("Triggering observation stop")
         self.status.set_value("idle")
 
@@ -197,7 +197,7 @@ class EffController(object):
             log.debug("Last sub scan in set, deregistering subscan handlers")
             self.sensors.subscannum.unregister_listener(self.subscan_handler)
         log.debug("Waiting on 'Observing' status")
-        self.sensors.status.register_listener(self.observing_status_handler)
+        self.sensors.observing.register_listener(self.observing_status_handler)
         self.status.set_value("waiting_status_change_to_observe")
 
     @coroutine
@@ -211,8 +211,8 @@ class EffController(object):
         with (yield lock.acquire()):
             log.debug("Received new scan number: {0}".format(value))
             log.debug("Deregistering handlers")
-            self.sensors.status.unregister_listener(self.not_observing_status_handler)
-            self.sensors.status.unregister_listener(self.observing_status_handler)
+            self.sensors.observing.unregister_listener(self.not_observing_status_handler)
+            self.sensors.observing.unregister_listener(self.observing_status_handler)
             self.sensors.scannum.unregister_listener(self.subscan_handler)
             log.debug("Stopping any ongoing observations")
 
@@ -230,7 +230,7 @@ class EffController(object):
             if nsubscans > 1:
                 log.debug("Scan has {0} sub scans. Registering subscan handlers.".format(nsubscans))
                 self.sensors.subscannum.register_listener(self.subscan_handler)
-            self.sensors.status.register_listener(self.observing_status_handler)
+            self.sensors.observing.register_listener(self.observing_status_handler)
             log.debug("Waiting on 'Observing' status")
             self.status.set_value("waiting_status_change_to_observe")
 
