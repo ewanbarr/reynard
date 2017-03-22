@@ -165,7 +165,7 @@ class StatusCatcherThread(Thread):
         self._sock.close()
 
 JSON_CONFIG = {
-    "sidtime": {"type":"float", "units":"hours", "default":0.0,
+    "lmst": {"type":"float", "units":"hours", "default":0.0,
                 "description":"Local mean sidereal time (LMST)",
                 "updater":lambda data: data["hourangle"]},
     "ha": {"type":"float", "units":"degrees", "default":0.0,
