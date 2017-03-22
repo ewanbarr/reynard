@@ -5,6 +5,7 @@ import re
 import socket
 import select
 from lxml import etree
+from threading import Thread, Event, Lock
 from tornado.gen import coroutine, Return, sleep
 from tornado.ioloop import PeriodicCallback
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
