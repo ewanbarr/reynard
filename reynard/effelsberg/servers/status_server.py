@@ -149,6 +149,7 @@ class StatusCatcherThread(Thread):
             self._sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self._sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_TTL, 20)
         self._sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, 1)
+        self._sock.setsockopt(socket.SOL_SOCKET,socket.SO_RCVBUF,1<<15)
         self._sock.setblocking(0)
         self._sock.bind(('',self._mcast_port))
         intf = socket.gethostbyname(socket.gethostname())
@@ -164,15 +165,73 @@ class StatusCatcherThread(Thread):
         self._sock.close()
 
 
+
 class JsonStatusServer(AsyncDeviceServer):
     VERSION_INFO = ("reynard-eff-jsonstatusserver-api",0,1)
     BUILD_INFO = ("reynard-eff-jsonstatusserver-implementation",0,1,"rc1")
+    CONFIG = {
+    "sidtime": {"type":"float", "units":"hours", "default":0.0,
+                "description":"Local mean sidereal time (LMST)",
+                "updater":lambda data: data["hourangle"]},
+    "ha": {"type":"float", "units":"degrees", "default":0.0,
+           "description":"Hour Angle",
+           "updater":lambda data: data["hourangle"]},
+    "utc": {"type":"float", "units":"hours", "default":0.0,
+            "description":"UTC",
+            "updater":lambda data: data["mjuld"]},
+    "observing": {"type":"bool", "default":False,
+                  "description":"Flag indicating if telescope is in 'measuring' state",
+                  "updater":lambda data: bool(data["istmess"])},
+    "scannum": {"type":"int", "default":0,
+                "description":"Current scan number",
+                "updater":lambda data: data["vscan"]},
+    "subscannum" : {"type":"int", "default":0,
+                    "description":"Current sub-scan number",
+                    "updater":lambda data: data["vsubscan"]},
+    "nsubscan" : {"type":"int", "default":1,
+                  "description":"Number of sub-scans in current scan",
+                  "updater":lambda data: data["vanzsubs"]},
+    "time-remaining" : {"type":"float", "default":0.0, "units":"seconds",
+                        "description":"Time remaining in current sub-scan",
+                        "updater":lambda data: data["time-to-end"]},
+    "time-elapsed" : {"type":"float", "default":0.0, "units":"seconds",
+                      "description":"Time elapsed in current sub-scan",
+                      "updater":lambda data: (data['mjuld'] - data['starttime'])*3600},
+    "source-name" : {"type":"string", "default":"",
+                     "description":"Current source name",
+                     "updater":lambda data: data["fuelling"]},
+    "azimuth" : {"type":"float", "default":0.0, "units":"degrees",
+                 "description":"Current telescope azimuth",
+                 "updater":lambda data: data["soll-1"]},
+    "azimuth-offset" : {"type":"float", "default":0.0, "units":"degrees",
+                        "description":"Difference between current and requested azimuth",
+                        "updater":lambda data: data["soll-1"] - data['ist-1']},
+    "elevation" : {"type":"float", "default":0.0, "units":"degrees",
+                   "description":"Current telescope elevation",
+                   "updater":lambda data: data["soll-0"]},
+    "elevation-offset" : {"type":"float", "default":0.0, "units":"degrees",
+                          "description":"Difference between current and requested elevation",
+                          "updater":lambda data: data["soll-0"] - data['ist-0']},
+    "ra" : {"type":"float", "default":0.0, "units":"degrees",
+            "description":"Current Mean EQ2000 Right Ascension",
+            "updater":lambda data: data["ra2000"]},
+    "dec" : {"type":"float", "default":0.0, "units":"degrees",
+             "description":"Current Mean EQ2000 Declination",
+             "updater":lambda data: data["dk2000"]},
+    "frequency" : {"type":"float", "default":0.0, "units":"GHz",
+                   "description":"Receiver frequency",
+                   "updater":lambda data: data["fe-rxfrq"]},
+    "receiver" : {"type":"string", "default":"",
+                  "description":"The currently active receiver (wavelength.version)",
+                  "updater":lambda data: str(data["wavelength"])}
+    }
 
     def __init__(self, server_host, server_port, mcast_group=JSON_STATUS_MCAST_GROUP, mcast_port=JSON_STATUS_PORT):
         self._mcast_group = mcast_group
         self._mcast_port = mcast_port
         self._catcher_thread = StatusCatcherThread()
         self._monitor = None
+        self._updaters = {}
         super(JsonStatusServer,self).__init__(server_host, server_port)
 
     @coroutine
@@ -182,11 +241,9 @@ class JsonStatusServer(AsyncDeviceServer):
         if data is None:
             log.warning("Catcher thread has not received any data yet")
             return
-        x, y, z = data["axstatus-0"], data["axstatus-1"], data["axstatus-2"]
-        if (x == 32) and (y == 32) and (z == 64):
-            self._sensors["status"].set_value("observing")
-        else:
-            self._sensors["status"].set_value("unknown")
+        for name,params in CONFIG.items():
+            if params.has_key("updater"):
+                self._sensors[name].set_value(params["updater"](data))
 
     def start(self):
         """start the server"""
@@ -208,9 +265,30 @@ class JsonStatusServer(AsyncDeviceServer):
         Note: These are primarily for testing and
               will be replaced in the final build.
         """
-        self.add_sensor(Sensor.string("status",
-            description = "The status of the telescope",
-            default = "idle",
-            initial_status=Sensor.UNKNOWN))
+        for name,params in CONFIG.items():
+            if params["type"] == "float":
+                sensor = Sensor.float(name,
+                    description = params["description"],
+                    units = params.get("units",None),
+                    default = params.get("default",0.0),
+                    initial_status=Sensor.UNKNOWN)
+            elif params["type"] == "string":
+                sensor = Sensor.string(name,
+                    description = params["description"],
+                    default = params.get("default",""),
+                    initial_status=Sensor.UNKNOWN)
+            elif params["type"] = "int":
+                sensor = Sensor.integer(name,
+                    description = params["description"],
+                    default = params.get("default",0),
+                    initial_status=Sensor.UNKNOWN)
+            elif params["type"] = "bool":
+                sensor = Sensor.boolean(name,
+                    description = params["description"],
+                    default = params.get("default",False),
+                    initial_status=Sensor.UNKNOWN)
+            else:
+                raise Exception("Unknown sensor type '{0}' requested".format(params["type"]))
+            self.add_sensor(sensor)
 
 
