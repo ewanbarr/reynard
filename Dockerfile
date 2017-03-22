@@ -28,10 +28,10 @@ RUN apt-get update -y && \
     git clone https://github.com/ska-sa/katcp-python.git && \
     cd katcp-python && \
     git checkout tags/v0.6.1 && \
-    python setup.py install && \
+    python setup.py install
 
 # Reynard-dev
-    cd .. && \
+RUN cd soft && \
     git clone https://github.com/ewanbarr/reynard.git && \
     cd reynard && \
     git checkout dev && \
