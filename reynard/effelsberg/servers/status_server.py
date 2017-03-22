@@ -164,12 +164,7 @@ class StatusCatcherThread(Thread):
                               socket.inet_aton(self._mcast_group) + socket.inet_aton('0.0.0.0'))
         self._sock.close()
 
-
-
-class JsonStatusServer(AsyncDeviceServer):
-    VERSION_INFO = ("reynard-eff-jsonstatusserver-api",0,1)
-    BUILD_INFO = ("reynard-eff-jsonstatusserver-implementation",0,1,"rc1")
-    CONFIG = {
+JSON_CONFIG = {
     "sidtime": {"type":"float", "units":"hours", "default":0.0,
                 "description":"Local mean sidereal time (LMST)",
                 "updater":lambda data: data["hourangle"]},
@@ -226,6 +221,10 @@ class JsonStatusServer(AsyncDeviceServer):
                   "updater":lambda data: str(data["wavelength"])}
     }
 
+class JsonStatusServer(AsyncDeviceServer):
+    VERSION_INFO = ("reynard-eff-jsonstatusserver-api",0,1)
+    BUILD_INFO = ("reynard-eff-jsonstatusserver-implementation",0,1,"rc1")
+
     def __init__(self, server_host, server_port, mcast_group=JSON_STATUS_MCAST_GROUP, mcast_port=JSON_STATUS_PORT):
         self._mcast_group = mcast_group
         self._mcast_port = mcast_port
@@ -241,7 +240,7 @@ class JsonStatusServer(AsyncDeviceServer):
         if data is None:
             log.warning("Catcher thread has not received any data yet")
             return
-        for name,params in CONFIG.items():
+        for name,params in JSON_CONFIG.items():
             if params.has_key("updater"):
                 self._sensors[name].set_value(params["updater"](data))
 
@@ -265,7 +264,7 @@ class JsonStatusServer(AsyncDeviceServer):
         Note: These are primarily for testing and
               will be replaced in the final build.
         """
-        for name,params in CONFIG.items():
+        for name,params in JSON_CONFIG.items():
             if params["type"] == "float":
                 sensor = Sensor.float(name,
                     description = params["description"],
