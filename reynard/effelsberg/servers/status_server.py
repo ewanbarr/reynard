@@ -12,6 +12,8 @@ from tornado.ioloop import PeriodicCallback
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete, Address, Struct
 from reynard.utils import doc_inherit
+from reynard.utils import escape_string
+from reynard.effelsberg.servers import EFF_JSON_CONFIG
 
 #TELESCOPE_STATUS_URL = "http://pulsarix/info/telescopeStatus.xml"
 TELESCOPE_STATUS_URL = "http://localhost:30005/info/telescopeStatus.xml"
@@ -164,137 +166,17 @@ class StatusCatcherThread(Thread):
                               socket.inet_aton(self._mcast_group) + socket.inet_aton('0.0.0.0'))
         self._sock.close()
 
-JSON_CONFIG = {
-    "lmst": {"type":"float", "units":"hours", "default":0.0,
-                "description":"Local mean sidereal time (LMST)",
-                "updater":lambda data: data["hourangle"]},
-    "ha": {"type":"float", "units":"degrees", "default":0.0,
-           "description":"Hour Angle",
-           "updater":lambda data: data["hourangle"]},
-    "utc": {"type":"float", "units":"hours", "default":0.0,
-            "description":"UTC",
-            "updater":lambda data: data["mjuld"]},
-    "observing": {"type":"bool", "default":False,
-                  "description":"Flag indicating if telescope is in 'measuring' state",
-                  "updater":lambda data: bool(data["istmess"])},
-    "scannum": {"type":"int", "default":0,
-                "description":"Current scan number",
-                "updater":lambda data: data["vscan"]},
-    "subscannum" : {"type":"int", "default":0,
-                    "description":"Current sub-scan number",
-                    "updater":lambda data: data["vsubscan"]},
-    "nsubscan" : {"type":"int", "default":1,
-                  "description":"Number of sub-scans in current scan",
-                  "updater":lambda data: data["vanzsubs"]},
-    "time-remaining" : {"type":"float", "default":0.0, "units":"seconds",
-                        "description":"Time remaining in current sub-scan",
-                        "updater":lambda data: data["time-to-end"]},
-    "time-elapsed" : {"type":"float", "default":0.0, "units":"seconds",
-                      "description":"Time elapsed in current sub-scan",
-                      "updater":lambda data: (data['mjuld'] - data['starttime'])*3600},
-    "source-name" : {"type":"string", "default":"",
-                     "description":"Current source name",
-                     "updater":lambda data: data["fuelling"]},
-    "azimuth" : {"type":"float", "default":0.0, "units":"degrees",
-                 "description":"Current telescope azimuth",
-                 "updater":lambda data: data["soll-1"]},
-    "azimuth-offset" : {"type":"float", "default":0.0, "units":"degrees",
-                        "description":"Difference between current and requested azimuth",
-                        "updater":lambda data: data["soll-1"] - data['ist-1']},
-    "azimuth-drive-speed" : {"type":"float", "default":0.0, "units":"deg/s",
-                             "description":"Azimuth drive speed",
-                             "updater":lambda data: data["vsoll-1"]/1200},
-    "elevation" : {"type":"float", "default":0.0, "units":"degrees",
-                   "description":"Current telescope elevation",
-                   "updater":lambda data: data["soll-0"]},
-    "elevation-offset" : {"type":"float", "default":0.0, "units":"degrees",
-                          "description":"Difference between current and requested elevation",
-                          "updater":lambda data: data["soll-0"] - data['ist-0']},
-    "elevation-drive-speed" : {"type":"float", "default":0.0, "units":"deg/s",
-                               "description":"Elevation drive speed",
-                               "updater":lambda data: data["vsoll-0"]/1200},
-    "ra" : {"type":"float", "default":0.0, "units":"degrees",
-            "description":"Current Mean EQ2000 Right Ascension",
-            "updater":lambda data: data["ra2000"]},
-    "dec" : {"type":"float", "default":0.0, "units":"degrees",
-             "description":"Current Mean EQ2000 Declination",
-             "updater":lambda data: data["dk2000"]},
-    "frequency" : {"type":"float", "default":0.0, "units":"GHz",
-                   "description":"Receiver frequency",
-                   "updater":lambda data: data["fe-rxfrq"]},
-    "receiver" : {"type":"string", "default":"",
-                  "description":"The currently active receiver (wavelength.version)",
-                  "updater":lambda data: str(data["wavelength"])},
-    "focus" : {"type":"string", "default":"",
-               "description":"Is the reciever at the primary or secondary focus?",
-               "updater":lambda data: "primary" if data["foc-prim"] else "secondary"},
-    "air-pressure" : {"type":"float", "default":0.0, "units":"hPa",
-                      "description":"On site air pressure",
-                      "range":[950,1050],
-                      "updater":lambda data: data["vpressure"]},
-    "humidity" : {"type":"float", "default":0.0, "units":"%",
-                  "description":"On site humidity",
-                  "range":[10,99],
-                  "updater":lambda data: data["vhumidity"]},
-    "air-temperature" : {"type":"float", "default":0.0, "units":"degrees C",
-                         "description":"On site air temperature",
-                         "range":[0,45],
-                         "updater":lambda data: data["vtemperature"]},
-    "wind-speed" : {"type":"float", "default":0.0, "units":"m/s",
-                    "description":"On site wind speed",
-                    "range":[0,10],
-                    "updater":lambda data: data["vwindvel"]},
-    "wind-direction" : {"type":"float", "default":0.0, "units":"degrees",
-                        "description":"On site wind direction (0 degrees is North)",
-                        "range":[0,360],
-                        "updater":lambda data: data["delphin-7"]},
-    "refraction-constant" : {"type":"float", "default":0.0, "units":"arcseconds",
-                             "description":"On site refraction constant",
-                             "range":[50,75],
-                             "updater":lambda data: data["vrefract"]},
-    "dew-point" : {"type":"float", "default":0.0, "units":"degrees C",
-                   "description":"On site dew point",
-                   "range":[1,45],
-                   "updater":lambda data: data["delphin-5"]},
-    "nula" : {"type":"float", "default":0.0, "units":"arcseconds",
-              "description":"Azimtuth correction (?)",
-              "updater":lambda data: data["vnula"]},
-    "nule" : {"type":"float", "default":0.0, "units":"arcseconds",
-              "description":"Elevation correction (?)",
-              "updater":lambda data: data["vnule"]},
-    "coll" : {"type":"float", "default":0.0, "units":"arcseconds",
-              "description":"??? correction (?)",
-              "updater":lambda data: data["vcoll"]},
-    "x-lin" : {"type":"float", "default":0.0, "units":"",
-               "description":"X-Linear",
-               "updater":lambda data: data["foc-set-0"]/10.0},
-    "y-lin" : {"type":"float", "default":0.0, "units":"",
-               "description":"Y-Linear",
-               "updater":lambda data: data["foc-set-1"]/10.0},
-    "z-lin" : {"type":"float", "default":0.0, "units":"",
-               "description":"Z-Linear",
-               "updater":lambda data: data["foc-set-2"]/10.0},
-    "x-rot" : {"type":"float", "default":0.0, "units":"arcminutes",
-               "description":"X axis rotation",
-               "updater":lambda data: data["foc-set-3"]/60.0},
-    "y-rot" : {"type":"float", "default":0.0, "units":"arcminutes",
-               "description":"Y axis rotation",
-               "updater":lambda data: data["foc-set-4"]/60.0},
-    "z-rot" : {"type":"float", "default":0.0, "units":"arcminutes",
-               "description":"Z axis rotation",
-               "updater":lambda data: data["foc-set-5"]/60.0},
-    "pol-angle" : {"type":"float", "default":0.0, "units":"degrees",
-                   "description":"Polarisation angle",
-                   "updater":lambda data: data["foc-istpos-6"]}
-    }
-
 class JsonStatusServer(AsyncDeviceServer):
     VERSION_INFO = ("reynard-eff-jsonstatusserver-api",0,1)
     BUILD_INFO = ("reynard-eff-jsonstatusserver-implementation",0,1,"rc1")
 
-    def __init__(self, server_host, server_port, mcast_group=JSON_STATUS_MCAST_GROUP, mcast_port=JSON_STATUS_PORT):
+    def __init__(self, server_host, server_port,
+                 mcast_group=JSON_STATUS_MCAST_GROUP,
+                 mcast_port=JSON_STATUS_PORT,
+                 parser=EFF_JSON_CONFIG):
         self._mcast_group = mcast_group
         self._mcast_port = mcast_port
+        self._parser = parser
         self._catcher_thread = StatusCatcherThread()
         self._monitor = None
         self._updaters = {}
@@ -307,7 +189,7 @@ class JsonStatusServer(AsyncDeviceServer):
         if data is None:
             log.warning("Catcher thread has not received any data yet")
             return
-        for name,params in JSON_CONFIG.items():
+        for name,params in self._parser.items():
             if params.has_key("updater"):
                 self._sensors[name].set_value(params["updater"](data))
 
@@ -325,13 +207,34 @@ class JsonStatusServer(AsyncDeviceServer):
         self._catcher_thread.stop()
         return super(JsonStatusServer,self).stop()
 
+    @request()
+    @return_reply(Str())
+    def request_xml(self,req):
+        """request an XML version of the status message"""
+        @coroutine
+        def convert():
+            data = self._catcher_thread.data
+            if data is None:
+                req.reply("fail","Data not yet initialised by catcher thread")
+            else:
+                out = {}
+                for name,params in self._parser.items():
+                    out[name] = {"type":params["type"],
+                                 "description":params["description"],
+                                 "units":params["units"],
+                                 "value":params["updater"](data)}
+                as_json = json.dumps(out)
+                req.reply("ok",escape_string(as_json))
+        self.ioloop.add_callback(convert)
+        raise AsyncReply
+
     def setup_sensors(self):
         """Set up basic monitoring sensors.
 
         Note: These are primarily for testing and
               will be replaced in the final build.
         """
-        for name,params in JSON_CONFIG.items():
+        for name,params in self._parser.items():
             if params["type"] == "float":
                 sensor = Sensor.float(name,
                     description = params["description"],
