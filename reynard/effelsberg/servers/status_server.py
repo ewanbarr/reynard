@@ -213,16 +213,20 @@ class JsonStatusServer(AsyncDeviceServer):
         """request an XML version of the status message"""
         @coroutine
         def convert():
+            def update(a,b,key):
+                if b.has_key(key):
+                    a[key] = b[key]
+
             data = self._catcher_thread.data
             if data is None:
                 req.reply("fail","Data not yet initialised by catcher thread")
             else:
                 out = {}
                 for name,params in self._parser.items():
-                    out[name] = {"type":params["type"],
-                                 "description":params["description"],
-                                 "units":params["units"],
-                                 "value":params["updater"](data)}
+                    out[name] = {}
+                    for key in ["type","units","description"]:
+                        update(out[name],params,"type")
+                    out[name]["value"] = params["updater"](data)
                 as_json = json.dumps(out)
                 req.reply("ok",escape_string(as_json))
         self.ioloop.add_callback(convert)
