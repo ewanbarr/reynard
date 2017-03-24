@@ -16,12 +16,6 @@ from reynard.utils import doc_inherit
 log = logging.getLogger('reynard.effelsberg.cam_server')
 lock = Lock()
 
-class Config(object):
-    backends = {
-    "paf":("localhost",1237)
-    }
-    status_server = ("localhost",1234)
-
 class EffCAMServer(AsyncDeviceServer):
     """The master pulsar backend control server for
     the Effelsberg radio telescope.
@@ -30,10 +24,10 @@ class EffCAMServer(AsyncDeviceServer):
     BUILD_INFO = ("reynard-effcamserver-implementation",0,1,"rc1")
     DEVICE_STATUSES = ["ok", "degraded", "fail"]
 
-    def __init__(self, server_host, server_port):
-        self._config = Config()
+    def __init__(self, config):
+        self._config = config
         self._backends = {}
-        super(EffCAMServer,self).__init__(server_host, server_port)
+        super(EffCAMServer,self).__init__(self._config["effcam"]["ip"], self._config["effcam"]["port"])
 
     def setup_sensors(self):
         """Set up basic monitoring sensors.
@@ -68,17 +62,17 @@ class EffCAMServer(AsyncDeviceServer):
         return super(EffCAMServer,self).stop()
 
     def _setup_clients(self):
-        for name,(ip,port) in self._config.backends.items():
+        for name,detail in self._config["backends"].items():
             client = KATCPClientResource(dict(
                 name=name,
-                address=(ip, port),
+                address=(detail["ip"], detail["port"]),
                 controlled=True))
             client.start()
             self._backends[name]=client
-        ip,port = self._config.status_server
+        detail = self._config["status"]
         self._status_server = KATCPClientResource(dict(
             name="status-server",
-            address=(ip, port),
+            address=(detail["ip"], detail["port"]),
             controlled=True))
         self._status_server.start()
 

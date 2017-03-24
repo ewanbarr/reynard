@@ -1,0 +1,20 @@
+{
+    "backends":
+    {
+        "universal-backend":
+        {
+            "ip":"pacifix0",
+            "port":5001
+        }
+    },
+    "effcam":
+    {
+        "ip":"pacifix0",
+        "port":5002
+    },
+    "status":
+    {
+        "ip":"pacifix0",
+        "port":5000
+    }
+}

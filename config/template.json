@@ -10,8 +10,6 @@
                 "config":
                 {
                     "config_path":"/Users/ebarr/Soft/MeerKAT/MGMT/reynard/scripts/pipelines",
-                    "sensor_server_ip":"{{sensor_server_ip}}",
-                    "sensor_server_port":"{{sensor_server_port}}"
                 }
             },
             {
@@ -19,8 +17,6 @@
                 "config":
                 {
                     "config_path":"/Users/ebarr/Soft/MeerKAT/MGMT/reynard/scripts/pipelines",
-                    "sensor_server_ip":"{{sensor_server_ip}}",
-                    "sensor_server_port":"{{sensor_server_port}}"
                 }
             }
         ]
