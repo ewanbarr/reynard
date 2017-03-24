@@ -24,10 +24,10 @@ class EffCAMServer(AsyncDeviceServer):
     BUILD_INFO = ("reynard-effcamserver-implementation",0,1,"rc1")
     DEVICE_STATUSES = ["ok", "degraded", "fail"]
 
-    def __init__(self, config):
-        self._config = config
+    def __init__(self, addr, status_server_addr):
+        self._status_server_addr = status_server_addr
         self._backends = {}
-        super(EffCAMServer,self).__init__(self._config["effcam"]["ip"], self._config["effcam"]["port"])
+        super(EffCAMServer,self).__init__(*addr)
 
     def setup_sensors(self):
         """Set up basic monitoring sensors.
@@ -62,6 +62,7 @@ class EffCAMServer(AsyncDeviceServer):
         return super(EffCAMServer,self).stop()
 
     def _setup_clients(self):
+        """
         for name,detail in self._config["backends"].items():
             client = KATCPClientResource(dict(
                 name=name,
@@ -69,10 +70,10 @@ class EffCAMServer(AsyncDeviceServer):
                 controlled=True))
             client.start()
             self._backends[name]=client
-        detail = self._config["status"]
+        """
         self._status_server = KATCPClientResource(dict(
             name="status-server",
-            address=(detail["ip"], detail["port"]),
+            address=self.status_server_addr,
             controlled=True))
         self._status_server.start()
 

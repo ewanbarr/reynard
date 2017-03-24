@@ -3,7 +3,6 @@ import signal
 import tornado
 import logging
 import json
-import pkg_resources
 from optparse import OptionParser
 from reynard.effelsberg.servers import EffCAMServer
 
@@ -24,14 +23,18 @@ if __name__ == "__main__":
 
     usage = "usage: %prog [options]"
     parser = OptionParser(usage=usage)
-    parser.add_option('-c', '--config', dest='config', type=str,
-                      help='Config file')
+    parser.add_option('-p', '--port', dest='port', type=long,
+        help='Port number to bind to')
+    parser.add_option('', '--status_ip',dest='ssip',type=str,
+        help='IP address of status server instance')
+    parser.add_option('', '--status_port',dest='ssp',type=long,
+        help='Port number of status server instance')
+
     (opts, args) = parser.parse_args()
-    log.info("Starting EffCAMServer instance".format(opts=opts))
+    log.info("Starting EffCAMServer instance")
     ioloop = tornado.ioloop.IOLoop.current()
-    config_file = pkg_resources.resource_filename("reynard","config/{0}".format(opts.config))
     config = json.load(config_file)
-    server = EffCAMServer(config)
+    server = EffCAMServer(("localhost",opts.port),(opts.ssip,opts.ssp))
     signal.signal(signal.SIGINT, lambda sig, frame: ioloop.add_callback_from_signal(
         on_shutdown, ioloop, server))
     def start_and_display():
