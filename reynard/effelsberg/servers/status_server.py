@@ -167,8 +167,9 @@ class StatusCatcherThread(Thread):
         log.debug("Socket open")
 
     def _close_socket(self):
+        intf = socket.gethostbyname(socket.gethostname())
         self._sock.setsockopt(socket.SOL_IP, socket.IP_DROP_MEMBERSHIP,
-                              socket.inet_aton(self._mcast_group) + socket.inet_aton('0.0.0.0'))
+                              socket.inet_aton(self._mcast_group) + socket.inet_aton(intf))
         self._sock.close()
 
 class JsonStatusServer(AsyncDeviceServer):
