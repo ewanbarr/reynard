@@ -73,7 +73,7 @@ class EffCAMServer(AsyncDeviceServer):
         """
         self._status_server = KATCPClientResource(dict(
             name="status-server",
-            address=self.status_server_addr,
+            address=self._status_server_addr,
             controlled=True))
         self._status_server.start()
 
