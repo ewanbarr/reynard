@@ -33,7 +33,6 @@ if __name__ == "__main__":
     (opts, args) = parser.parse_args()
     log.info("Starting EffCAMServer instance")
     ioloop = tornado.ioloop.IOLoop.current()
-    config = json.load(config_file)
     server = EffCAMServer(("localhost",opts.port),(opts.ssip,opts.ssp))
     signal.signal(signal.SIGINT, lambda sig, frame: ioloop.add_callback_from_signal(
         on_shutdown, ioloop, server))
