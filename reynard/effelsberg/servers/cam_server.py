@@ -2,6 +2,8 @@ import logging
 import requests
 import time
 import re
+import pkg_resources
+from jinja2 import Template
 from lxml import etree
 from tornado.gen import coroutine, Return
 from tornado.locks import Lock
@@ -125,6 +127,7 @@ class EffCAMServer(AsyncDeviceServer):
         self.ioloop.add_callback(self._controller.stop)
         return ("ok","disarmed")
 
+
 class EffController(object):
     STATES = [
     "idle","starting","stopping",
@@ -141,10 +144,24 @@ class EffController(object):
         self.ioloop = cam_server.ioloop
         self.sensors = self.cam_server._status_server.sensor
         self.status = self.cam_server._controller_status
+        self._prev_receiver = None
+        self._backend = None
+
+    @coroutine
+    def update_firmware(self):
+        receiver = yield self.sensors.receiver.get_value()
+        if self._prev_receiver != receiver:
+            log.info("Setting firmware for reciver {0}".format(receiver))
+            self._prev_receiver = receiver
+        # checking receiver wavelength.version
+        # checking frequency
+        # getting firmware controller
+        # configure_firmware(receiver,frequency)
 
     @coroutine
     def start(self):
         self.status.set_value("starting")
+        yield self.update_firmware()
         self.sensors.scannum.set_sampling_strategy('event')
         self.sensors.subscannum.set_sampling_strategy('event')
         self.sensors.observing.set_sampling_strategy('event')
@@ -201,6 +218,27 @@ class EffController(object):
         self.status.set_value("waiting_status_change_to_observe")
 
     @coroutine
+    def configure(self):
+        source_name = yield self.sensors.source.get_value()
+        receiver = yield self.sensors.receiver.get_value()
+        project = yield self.sensors.project.get_value()
+        log.debug("Configuring for observation of source '{0}' with receiver '{1}' for project '{2}'".format(
+            source_name,receiver,project))
+
+        nodes = ["pacifix0","pacifix1","pacifix2"]
+        template = pkg_resources.resource_filename("reynard","config/template.json")
+        with open(template) as f:
+            config = Template(f.read())
+        config.render(nodes)
+        json_config = json.loads(config)
+
+        #config = config_helper(receiver)
+        #for node in config.capture_nodes:
+        #    config.processing_pipeline
+        # find nodes that need configured
+
+
+    @coroutine
     def scan_handler(self,rt,t,status,value):
         # Check that previous observation has been completed
         # Deregister any remaining handlers
@@ -216,12 +254,17 @@ class EffController(object):
             self.sensors.scannum.unregister_listener(self.subscan_handler)
             log.debug("Stopping any ongoing observations")
 
+            #Update firmware
+            #Will only update if the receiver and/or frequency has changed
+            yield self.update_firmware()
+
+
             source_name = yield self.sensors.source.get_value()
             receiver = yield self.sensors.receiver.get_value()
             log.debug("Configuring for observation of source '{0}' with receiver '{1}'".format(
                 source_name,receiver))
+            yield self.update_firmware()
             self.status.set_value("configuring_backends")
-
 
 
             self.scan_number = int(value)

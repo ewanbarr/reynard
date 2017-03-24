@@ -13,6 +13,6 @@ setup(name='reynard',
     scripts=['scripts/reynard_basic_cli.py',
     'scripts/reynard_basic_server.py'],
     package_data = {
-    "reynard.config":['*']
+    "reynard":['config/*']
     }
 )

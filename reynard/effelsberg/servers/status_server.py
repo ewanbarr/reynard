@@ -132,16 +132,21 @@ class StatusCatcherThread(Thread):
     def run(self):
         data = None
         while not self._stop_event.is_set():
-            r,o,e = select.select([self._sock],[],[],0.0)
-            if r:
-                log.debug("Data in socket... reading data")
-                data,_ = self._sock.recvfrom(1<<17)
-            else:
-                if data is not None:
-                    log.debug("Updating data")
-                    self.data = json.loads(data)
-                log.debug("Sleeping")
-                self._stop_event.wait(0.5)
+            try:
+                r,o,e = select.select([self._sock],[],[],0.0)
+                if r:
+                    log.debug("Data in socket... reading data")
+                    data,_ = self._sock.recvfrom(1<<17)
+                else:
+                    if data is not None:
+                        log.debug("Updating data")
+                        self.data = json.loads(data)
+                    log.debug("Sleeping")
+                    self._stop_event.wait(0.5)
+            except Exception as error:
+                log.exception("Error on status retrieval")
+                log.debug("Sleeping for 5 seconds")
+                self._stop_event.wait(5.0)
 
     def _open_socket(self):
         log.debug("Opening socket")
@@ -216,7 +221,6 @@ class JsonStatusServer(AsyncDeviceServer):
             def update(a,b,key):
                 if b.has_key(key):
                     a[key] = b[key]
-
             data = self._catcher_thread.data
             if data is None:
                 req.reply("fail","Data not yet initialised by catcher thread")
@@ -225,7 +229,7 @@ class JsonStatusServer(AsyncDeviceServer):
                 for name,params in self._parser.items():
                     out[name] = {}
                     for key in ["type","units","description"]:
-                        update(out[name],params,"type")
+                        update(out[name],params,key)
                     out[name]["value"] = params["updater"](data)
                 as_json = json.dumps(out)
                 req.reply("ok",escape_string(as_json))
