@@ -30,6 +30,8 @@ RUN apt-get update -y && \
     git checkout tags/v0.6.1 && \
     python setup.py install
 
+ENV ARSE 0
+
 # Reynard-dev
 RUN cd soft && \
     git clone https://github.com/ewanbarr/reynard.git && \

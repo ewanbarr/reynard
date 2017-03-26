@@ -9,8 +9,6 @@ from katcp.ioloop_manager import with_relative_timeout
 from reynard.monitors import DiskMonitor,CpuMonitor,MemoryMonitor
 from reynard.utils import doc_inherit, unescape_string
 
-DEFAULT_NODE_PORT = 5000
-
 log = logging.getLogger("reynard.ubi_server")
 
 class UniversalBackendInterface(AsyncDeviceServer):
@@ -21,9 +19,9 @@ class UniversalBackendInterface(AsyncDeviceServer):
     BUILD_INFO = ("reynard-ubi-implementation",0,1,"rc1")
     DEVICE_STATUSES = ["ok","fail","degraded"]
 
-    def __init__(self, server_host, server_port, config):
+    def __init__(self, server_host, server_port):
         self._nodes = {}
-        super(ManagementNode,self).__init__(server_host, server_port)
+        super(UniversalBackendInterface,self).__init__(server_host, server_port)
 
     def setup_sensors(self):
         """add sensors"""
@@ -36,7 +34,7 @@ class UniversalBackendInterface(AsyncDeviceServer):
         where the clients for suboridnates nodes will be
         set up.
         """
-        super(ManagementNode,self).start()
+        super(UniversalBackendInterface,self).start()
 
     def _add_node(self,name,ip,port):
         """Add a named node."""
