@@ -1,0 +1,26 @@
+version: '2'
+services:
+  status-server:
+    build: .
+    container_name: status-server
+    network_mode: host
+    ports:
+      - 5000:5000
+    image: reynard
+    command: reynard_eff_status_server.py -p 5000
+  effcam-server:
+    build: .
+    container_name: effcam-server
+    network_mode: host
+    ports:
+      - 5002:5002
+    image: reynard  
+    command: reynard_effcam_server.py --port 5002 --status_ip=localhost --status_port=5000 --backend ubi:localhost:5003
+  ubi-server:
+    build: .
+    container_name: ubi-server
+    network_mode: host
+    ports:
+      - 5003:5003
+    image: reynard
+    command: reynard_ubi_server.py --port 5003

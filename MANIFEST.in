@@ -1,0 +1,2 @@
+include config/template.json
+recursive-include config *

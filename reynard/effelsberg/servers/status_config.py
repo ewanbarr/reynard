@@ -142,5 +142,8 @@ EFF_JSON_CONFIG = {
                "updater":lambda data: data["foc-set-5"]/60.0},
     "pol-angle" : {"type":"float", "default":0.0, "units":"degrees",
                    "description":"Polarisation angle",
-                   "updater":lambda data: data["foc-istpos-6"]}
+                   "updater":lambda data: data["foc-istpos-6"]},
+    "project" : {"type":"string", "default":"",
+                 "description":"Project ID",
+                 "updater":lambda data: str(data["project"])}
     }
