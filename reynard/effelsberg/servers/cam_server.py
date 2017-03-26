@@ -88,8 +88,8 @@ class EffCAMServer(AsyncDeviceServer):
     @return_reply(Int())
     def request_backend_list(self, req):
         """request a list of connected backends"""
-        for name,server in self._backends.items():
-            req.inform("{0} {1}".format(name,server.bind_address))
+        for name,client in self._backends.items():
+            req.inform("{0} {1}".format(name,client.address))
         return ("ok",len(self._backends))
 
     @request()
