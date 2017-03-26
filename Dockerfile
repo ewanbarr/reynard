@@ -19,6 +19,7 @@ RUN apt-get update -y && \
     pip install \
     psutil \
     lxml \
+    jinja2 \
     cmd2 && \
     pip install -e git://github.com/docker/docker-py.git@2.2.0-release#egg=docker-py && \
 
@@ -29,6 +30,8 @@ RUN apt-get update -y && \
     cd katcp-python && \
     git checkout tags/v0.6.1 && \
     python setup.py install
+
+ENV ARSE 1
 
 # Reynard-dev
 RUN cd soft && \
