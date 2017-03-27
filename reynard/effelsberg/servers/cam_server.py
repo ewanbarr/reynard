@@ -272,7 +272,7 @@ class EffController(object):
             if not reading.value:
                 self.sensors.observing.register_listener(self.observing_status_handler)
                 log.debug("Waiting on 'Observing' status")
-            self.status.set_value("waiting_status_change_to_observe")
+                self.status.set_value("waiting_status_change_to_observe")
             else:
                 self.ioloop.add_callback(lambda: observing_status_handler(*reading))
 
