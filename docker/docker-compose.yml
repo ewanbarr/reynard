@@ -14,7 +14,7 @@ services:
     network_mode: host
     ports:
       - 5002:5002
-    image: reynard  
+    image: reynard
     command: reynard_effcam_server.py --port 5002 --status_ip=localhost --status_port=5000 --backend ubi:localhost:5003
   ubi-server:
     build: .
@@ -24,3 +24,27 @@ services:
       - 5003:5003
     image: reynard
     command: reynard_ubi_server.py --port 5003
+  ubn-server-0:
+    build: .
+    container_name: ubn-server-0
+    network_mode: host
+    ports:
+      - 5004:5004
+    image: reynard
+    command: reynard_ubi_server.py --port 5004
+  ubn-server-1:
+    build: .
+    container_name: ubn-server-1
+    network_mode: host
+    ports:
+      - 5005:5005
+    image: reynard
+    command: reynard_ubi_server.py --port 5005
+  ubn-server-2:
+    build: .
+    container_name: ubn-server-2
+    network_mode: host
+    ports:
+      - 5006:5006
+    image: reynard
+    command: reynard_ubi_server.py --port 5006

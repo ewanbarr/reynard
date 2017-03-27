@@ -1,4 +1,5 @@
 import logging
+import json
 from tornado.gen import coroutine, Return
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete, Address
@@ -7,14 +8,19 @@ from katcp.ioloop_manager import with_relative_timeout
 from tornado.ioloop import PeriodicCallback
 from reynard.monitors import DiskMonitor,CpuMonitor,MemoryMonitor
 from reynard.utils import doc_inherit
+from reynard.pipelines import PIPELINE_REGISTRY
+from reynard.servers import PipelineServer
 
 log = logging.getLogger("reynard.ubn_server")
 
 class UniversalBackendNode(AsyncDeviceServer):
     VERSION_INFO = ("reynard-ubn-api",0,1)
     BUILD_INFO = ("reynard-ubn-implementation",0,1,"rc1")
+    DEVICE_STATUSES = ["ok","fail","degraded"]
+
     def __init__(self, server_host, server_port):
         self._pipeline_servers = {}
+        self._monitors = {}
         super(UniversalBackendNode,self).__init__(server_host, server_port)
 
     def setup_sensors(self):
@@ -36,7 +42,7 @@ class UniversalBackendNode(AsyncDeviceServer):
                 self.add_sensor(sensor)
 
     def start(self):
-        super(UniversalBackendNode,self).__init__()
+        super(UniversalBackendNode,self).start()
         for monitor in self._monitors.values():
             monitor.start(1000,self.ioloop)
 
@@ -44,6 +50,7 @@ class UniversalBackendNode(AsyncDeviceServer):
         for monitor in self._monitors.values():
             monitor.stop()
         return super(UniversalBackendNode,self).stop()
+        #deregister self with master
 
     @request()
     @return_reply(Str())

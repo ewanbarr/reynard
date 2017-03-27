@@ -4,7 +4,7 @@ import logging
 from argparse import ArgumentParser
 from katcp.resource_client import KATCPClientResource
 
-log = logging.getLogger('reynard.effelsberg.paf_controller')
+log = logging.getLogger('reynard.effelsberg.effcam_client')
 
 def client_request(func):
     def wrapped(client, *args, **kwargs):

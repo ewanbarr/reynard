@@ -5,9 +5,9 @@ import tornado
 import logging
 import json
 from optparse import OptionParser
-from reynard.servers import UniversalBackendInterface
+from reynard.servers import UniversalBackendNode
 
-log = logging.getLogger("reynard.ubi_server")
+log = logging.getLogger("reynard.ubn_server")
 
 @tornado.gen.coroutine
 def on_shutdown(ioloop, server):
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     logger.setLevel(opts.log_level.upper())
     log.info("Starting UniversalBackendInterface instance")
     ioloop = tornado.ioloop.IOLoop.current()
-    server = UniversalBackendInterface("localhost",opts.port)
+    server = UniversalBackendNode("localhost",opts.port)
     signal.signal(signal.SIGINT, lambda sig, frame: ioloop.add_callback_from_signal(
         on_shutdown, ioloop, server))
     def start_and_display():
