@@ -4,7 +4,7 @@ import tornado
 import logging
 import json
 from optparse import OptionParser
-from reynard.effelsberg.servers import JsonStatusServer
+from reynard.effelsberg.servers import JsonStatusServer, DummyJsonStatusServer
 
 log = logging.getLogger("reynard.eff_status_server")
 
@@ -21,6 +21,8 @@ if __name__ == "__main__":
         help='Port number to bind to')
     parser.add_option('', '--log_level',dest='log_level',type=str,
         help='Port number of status server instance',default="INFO")
+    parser.add_option('', '--dummy',action="store_true", dest='dummy',
+        help='Set status server to dummy')
     (opts, args) = parser.parse_args()
 
     FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
@@ -29,7 +31,10 @@ if __name__ == "__main__":
     logger.setLevel(opts.log_level.upper())
     log.info("Starting JsonStatusServer instance")
     ioloop = tornado.ioloop.IOLoop.current()
-    server = JsonStatusServer("localhost",opts.port)
+    if opts.dummy:
+        server = DummyJsonStatusServer("localhost",opts.port)
+    else:
+        server = JsonStatusServer("localhost",opts.port)
     signal.signal(signal.SIGINT, lambda sig, frame: ioloop.add_callback_from_signal(
         on_shutdown, ioloop, server))
     def start_and_display():
