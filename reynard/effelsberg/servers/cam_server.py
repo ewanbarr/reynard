@@ -274,5 +274,5 @@ class EffController(object):
                 log.debug("Waiting on 'Observing' status")
                 self.status.set_value("waiting_status_change_to_observe")
             else:
-                self.ioloop.add_callback(lambda: observing_status_handler(*reading))
+                self.ioloop.add_callback(lambda: self.observing_status_handler(*reading))
 
