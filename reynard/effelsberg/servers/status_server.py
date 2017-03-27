@@ -250,6 +250,7 @@ class JsonStatusServer(AsyncDeviceServer):
     @request(Str())
     @return_reply(Str())
     def request_sensor_control(self, req, name):
+        """take control of a given sensor value"""
         if not self._sensors.has_key(name):
             return ("fail","No sensor named '{0}'".format(name))
         else:
@@ -259,6 +260,7 @@ class JsonStatusServer(AsyncDeviceServer):
     @request(Str())
     @return_reply(Str())
     def request_sensor_release(self, req, name):
+        """release a sensor from user control"""
         if not self._sensors.has_key(name):
             return ("fail","No sensor named '{0}'".format(name))
         else:
