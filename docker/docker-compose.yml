@@ -35,7 +35,7 @@ services:
     ports:
       - 5004:5004
     image: reynard
-    command: reynard_ubi_server.py --port 5004 --log_level DEBUG
+    command: reynard_ubn_server.py --port 5004 --log_level DEBUG
   ubn-server-1:
     build: .
     container_name: ubn-server-1
@@ -43,7 +43,7 @@ services:
     ports:
       - 5005:5005
     image: reynard
-    command: reynard_ubi_server.py --port 5005 --log_level DEBUG
+    command: reynard_ubn_server.py --port 5005 --log_level DEBUG
   ubn-server-2:
     build: .
     container_name: ubn-server-2
@@ -51,4 +51,4 @@ services:
     ports:
       - 5006:5006
     image: reynard
-    command: reynard_ubi_server.py --port 5006 --log_level DEBUG
+    command: reynard_ubn_server.py --port 5006 --log_level DEBUG
