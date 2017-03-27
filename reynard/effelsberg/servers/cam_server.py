@@ -192,7 +192,7 @@ class EffController(object):
     @coroutine
     def not_observing_status_handler(self,rt,t,status,value):
         self.status.set_value("stopping_backends")
-        log.debug("Telescope state changed to '{0}'".format(value))
+        log.debug("Observing state changed to '{0}'".format(value))
         log.debug("Deregistering status change handler")
         self.sensors.observing.unregister_listener(self.not_observing_status_handler)
         log.debug("Triggering observation stop")
@@ -267,8 +267,12 @@ class EffController(object):
             if nsubscans > 1:
                 log.debug("Scan has {0} sub scans. Registering subscan handlers.".format(nsubscans))
                 self.sensors.subscannum.register_listener(self.subscan_handler)
-            self.sensors.observing.register_listener(self.observing_status_handler)
-            log.debug("Waiting on 'Observing' status")
-            self.status.set_value("waiting_status_change_to_observe")
 
+            reading = yield self.sensors.observing.get_reading()
+            if not reading.value:
+                self.sensors.observing.register_listener(self.observing_status_handler)
+                log.debug("Waiting on 'Observing' status")
+            self.status.set_value("waiting_status_change_to_observe")
+            else:
+                self.ioloop.add_callback(lambda: observing_status_handler(*reading))
 
