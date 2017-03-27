@@ -22,7 +22,7 @@ EFF_JSON_CONFIG = {
     "subscannum" : {"type":"int", "default":0,
                     "description":"Current sub-scan number",
                     "updater":lambda data: data["vsubscan"]},
-    "numsubscan" : {"type":"int", "default":1,
+    "numsubscans" : {"type":"int", "default":1,
                     "description":"Number of sub-scans in current scan",
                     "updater":lambda data: data["vanzsubs"]},
     "time-remaining" : {"type":"float", "default":0.0, "units":"seconds",

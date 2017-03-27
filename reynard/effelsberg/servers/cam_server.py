@@ -159,7 +159,7 @@ class EffController(object):
         self.sensors.scannum.set_sampling_strategy('event')
         self.sensors.subscannum.set_sampling_strategy('event')
         self.sensors.observing.set_sampling_strategy('event')
-        yield self.sensors.scannum.get_value()
+        #yield self.sensors.scannum.get_value()
         self.sensors.scannum.register_listener(self.scan_handler)
         log.debug("starting controller")
         self.status.set_value("waiting_for_scan_number_change")
