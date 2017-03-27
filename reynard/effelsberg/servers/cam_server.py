@@ -213,7 +213,7 @@ class EffController(object):
 
     @coroutine
     def configure(self):
-        source_name = yield self.sensors.source.get_value()
+        source_name = yield self.sensors.source_name.get_value()
         receiver = yield self.sensors.receiver.get_value()
         project = yield self.sensors.project.get_value()
         log.debug("Configuring for observation of source '{0}' with receiver '{1}' for project '{2}'".format(
@@ -253,7 +253,7 @@ class EffController(object):
             yield self.update_firmware()
 
 
-            source_name = yield self.sensors.source.get_value()
+            source_name = yield self.sensors.source_name.get_value()
             receiver = yield self.sensors.receiver.get_value()
             log.debug("Configuring for observation of source '{0}' with receiver '{1}'".format(
                 source_name,receiver))
