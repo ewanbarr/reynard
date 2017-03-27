@@ -17,6 +17,7 @@ setup(name='reynard',
     scripts=['scripts/reynard_basic_cli.py',
              'scripts/reynard_basic_server.py',
              'scripts/reynard_ubi_server.py',
+             'scripts/reynard_ubn_server.py',
              'scripts/effelsberg/reynard_effcam_server.py',
              'scripts/effelsberg/reynard_eff_status_server.py'],
     package_data = {
