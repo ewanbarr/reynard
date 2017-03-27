@@ -15,6 +15,13 @@ from reynard.utils import doc_inherit
 from reynard.utils import escape_string
 from reynard.effelsberg.servers import EFF_JSON_CONFIG
 
+TYPE_CONVERTER = {
+    "float":float,
+    "int":int,
+    "string":str,
+    "bool":int
+}
+
 #TELESCOPE_STATUS_URL = "http://pulsarix/info/telescopeStatus.xml"
 TELESCOPE_STATUS_URL = "http://localhost:30005/info/telescopeStatus.xml"
 
@@ -186,6 +193,7 @@ class JsonStatusServer(AsyncDeviceServer):
         self._catcher_thread = StatusCatcherThread()
         self._monitor = None
         self._updaters = {}
+        self._controlled = set()
         super(JsonStatusServer,self).__init__(server_host, server_port)
 
     @coroutine
@@ -196,6 +204,8 @@ class JsonStatusServer(AsyncDeviceServer):
             log.warning("Catcher thread has not received any data yet")
             return
         for name,params in self._parser.items():
+            if name in self._controlled:
+                continue
             if params.has_key("updater"):
                 self._sensors[name].set_value(params["updater"](data))
 
@@ -236,6 +246,41 @@ class JsonStatusServer(AsyncDeviceServer):
                 req.reply("ok",escape_string(as_json))
         self.ioloop.add_callback(convert)
         raise AsyncReply
+
+    @request(Str())
+    @return_reply(Str())
+    def request_sensor_control(self, req, name):
+        if not self._sensors.has_key(name):
+            return ("fail","No sensor named '{0}'".format(name))
+        else:
+            self._controlled.add(name)
+            return ("ok","{0} under user control".format(name))
+
+    @request(Str())
+    @return_reply(Str())
+    def request_sensor_release(self, req, name):
+        if not self._sensors.has_key(name):
+            return ("fail","No sensor named '{0}'".format(name))
+        else:
+            self._controlled.remove(name)
+            return ("ok","{0} released from user control".format(name))
+
+    @request(Str(),Str())
+    @return_reply(Str())
+    def request_sensor_set(self, req, name, value):
+        """Set the value of a sensor"""
+        if not self._sensors.has_key(name):
+            return ("fail","No sensor named '{0}'".format(name))
+        if not name in self._controlled:
+            return ("fail","Sensor '{0}' not under user control".format(name))
+        try:
+            param = self._parser[name]
+            value = TYPE_CONVERTER[param["type"]](value)
+            self._sensors[name].set_value(value)
+        except Exception as error:
+            return ("fail",str(error))
+        else:
+            return ("ok","Status set to {0}".format(self._sensors[name].value()))
 
     def setup_sensors(self):
         """Set up basic monitoring sensors.
