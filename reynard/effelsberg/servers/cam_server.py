@@ -245,7 +245,7 @@ class EffController(object):
             log.debug("Deregistering handlers")
             self.sensors.observing.unregister_listener(self.not_observing_status_handler)
             self.sensors.observing.unregister_listener(self.observing_status_handler)
-            self.sensors.scannum.unregister_listener(self.subscan_handler)
+            self.sensors.subscannum.unregister_listener(self.subscan_handler)
             log.debug("Stopping any ongoing observations")
 
             #Update firmware

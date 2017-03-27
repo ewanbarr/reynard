@@ -29,11 +29,12 @@ if __name__ == "__main__":
     logger = logging.getLogger('reynard')
     logging.basicConfig(format=FORMAT)
     logger.setLevel(opts.log_level.upper())
-    log.info("Starting JsonStatusServer instance")
     ioloop = tornado.ioloop.IOLoop.current()
     if opts.dummy:
+        log.info("Starting DummyJsonStatusServer instance")
         server = DummyJsonStatusServer("localhost",opts.port)
     else:
+        log.info("Starting JsonStatusServer instance")
         server = JsonStatusServer("localhost",opts.port)
     signal.signal(signal.SIGINT, lambda sig, frame: ioloop.add_callback_from_signal(
         on_shutdown, ioloop, server))
