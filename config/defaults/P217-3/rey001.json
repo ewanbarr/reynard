@@ -24,7 +24,7 @@
                         "npol":2,
                         "nchan":1
                     },
-                    "key":"dada_a",
+                    "key":"0x000001",
                     "runtime":15
                 }
             },
@@ -45,7 +45,7 @@
                         "npol":2,
                         "nchan":1
                     },
-                    "key":"dada_b",
+                    "key":"0x000003",
                     "runtime":30
                 }
             }

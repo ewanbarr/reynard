@@ -31,7 +31,6 @@ class UniversalBackendNode(AsyncDeviceServer):
         self._pipeline_servers = {}
         self._pipeline_clients = {}
         self._monitors = {}
-        self._is_configured = False
         super(UniversalBackendNode,self).__init__(server_host, server_port)
 
     def setup_sensors(self):
@@ -44,7 +43,11 @@ class UniversalBackendNode(AsyncDeviceServer):
             description = "health status of node",
             params = self.DEVICE_STATUSES,
             default = "ok")
+        self._active = Sensor.boolean("active",
+            description = "Is node configured for processing",
+            default = False)
         self.add_sensor(self._device_status)
+        self.add_sensor(self._active)
         self._monitors["disk"] = DiskMonitor([("root","/"),])
         self._monitors["cpu"] = CpuMonitor()
         self._monitors["memory"] = MemoryMonitor()
@@ -53,13 +56,17 @@ class UniversalBackendNode(AsyncDeviceServer):
                 self.add_sensor(sensor)
 
     def start(self):
+        log.debug("Starting server")
         super(UniversalBackendNode,self).start()
-        for monitor in self._monitors.values():
+        for name,monitor in self._monitors.items():
+            log.debug("Starting {0} monitor on 1 second polling interval".format(name))
             monitor.start(1000,self.ioloop)
 
     def stop(self):
-        for monitor in self._monitors.values():
+        for name,monitor in self._monitors.items():
+            log.debug("Stopping {0} monitor".format(name))
             monitor.stop()
+        log.debug("Stopping server")
         return super(UniversalBackendNode,self).stop()
         #deregister self with master
 
@@ -91,15 +98,45 @@ class UniversalBackendNode(AsyncDeviceServer):
         """configure"""
         @coroutine
         def configure(conf):
+            futures = {}
             for pipeline in conf:
                 name = pipeline["name"]
                 pipeline_name = pipeline["pipeline_name"]
-                server = self._create_pipeline_server(name,pipeline_name)
-                client = self._create_pipeline_client(name,server)
+
+                try:
+                    server = self._create_pipeline_server(name,pipeline_name)
+                except PipelineNameExists:
+                    req.reply("fail","Pipeline named '{0}' already exists".format(name))
+                except InvalidPipeline:
+                    req.reply("fail","No pipeline type named '{0}'".format(pipeline_name))
+                except Exception as error:
+                    req.reply("fail","Unknown error while creating pipeline server: {0}".format(str(error)))
+                else:
+                    req.inform("Created pipeline server '{0}'".format(name))
+
+                try:
+                    client = self._create_pipeline_client(name,server)
+                except ClientExists:
+                    req.reply("fail","Client named '{0}' already exists".format(name))
+                except Exception as error:
+                    req.reply("fail","Unknown error while creating pipeline client: {0}".format(str(error)))
+                else:
+                    req.inform("Created pipeline client '{0}'".format(name))
                 yield client.until_synced()
-                configure_response = yield client.req.configure(pack_dict(pipeline["config"]),sensors)
+                futures[name] = client.req.configure(pack_dict(pipeline["config"]),sensors)
+
+            for name,future in futures.items():
+                configure_response = yield future
                 if configure_response.reply.reply_ok():
-                    req.inform("Pipeline configured")
+                    req.inform("Pipeline '{0}' configured".format(name))
+                else:
+                    req.reply("fail","Configuration of pipeline '{0}' failed with message: {1}",format(name,configure_response.messages))
+                    return
+            req.reply("ok","All pipelines created and configured")
+            self._active.set_value(True)
+
+        if self._active.value():
+            return ("fail","Node is already active, deconfigure before sending new configure commands")
         conf = unpack_dict(pipeline_config)
         self.ioloop.add_callback(lambda: configure(conf))
         raise AsyncReply
@@ -110,14 +147,20 @@ class UniversalBackendNode(AsyncDeviceServer):
         """deconf"""
         @coroutine
         def deconfigure():
+            futures = {}
             for name,client in self._pipeline_clients.items():
-                yield client.req.deconfigure()
+                futures[name] = client.req.deconfigure()
+            #for name,client in self._pipeline_clients.items():
+                response = yield futures[name]
+                if not response.reply.reply_ok():
+                    req.inform("Warning: failure on deconfigure of pipeline '{0}': {1}".format(name,response.messages))
                 client.stop()
             for name,server in self._pipeline_servers.items():
                 yield server.stop()
             self._pipeline_clients = {}
             self._pipeline_servers = {}
-            req.reply("ok","deconfigured node")
+            req.reply("ok","Deconfigured node")
+            self._active.set_value(False)
         self.ioloop.add_callback(deconfigure)
         raise AsyncReply
 

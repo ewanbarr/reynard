@@ -3,7 +3,7 @@ import json
 import tempfile
 from docker.errors import ContainerError, NotFound, APIError
 from reynard.pipelines import Pipeline, reynard_pipeline, DockerHelper, PipelineError
-from reynard.dada import render_dada_header, make_dada_key_string
+from reynard.dada import render_dada_header, make_dada_key_string, dada_keygen
 from reynard.utils import pack_dict, unpack_dict
 
 log = logging.getLogger("reynard.TestPipeline")

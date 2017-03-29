@@ -35,9 +35,7 @@ class MemoryMonitor(Monitor):
                 status = Sensor.WARN
             else:
                 status = Sensor.NOMINAL
-            log.debug("%s_memory_size: %.2f MB"%(node,info[node]["MemTotal"]))
             self._sensors["%s_memory_size"%node].set_value(info[node]["MemTotal"])
-            log.debug("%s_memory_avail: %.2f MB"%(node,info[node]["MemFree"]))
             self._sensors["%s_memory_avail"%node].set_value(info[node]["MemFree"],status)
 
 def get_meminfo():

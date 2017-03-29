@@ -32,7 +32,7 @@ if __name__ == "__main__":
     logger = logging.getLogger('reynard')
     logging.basicConfig(format=FORMAT)
     logger.setLevel(opts.log_level.upper())
-    log.info("Starting UniversalBackendInterface instance")
+    log.info("Starting UniversalBackendNode instance")
     ioloop = tornado.ioloop.IOLoop.current()
     server = UniversalBackendNode("localhost",opts.port)
     signal.signal(signal.SIGINT, lambda sig, frame: ioloop.add_callback_from_signal(

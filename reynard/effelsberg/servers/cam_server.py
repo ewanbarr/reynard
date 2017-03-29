@@ -11,8 +11,8 @@ from tornado.ioloop import PeriodicCallback
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete, Address, Struct
 from katcp.resource_client import KATCPClientResource
-from reynard.utils import doc_inherit, escape_string, pack_dict
-from reynard.effelsberg import config
+from reynard.utils import doc_inherit, escape_string, pack_dict, unpack_dict
+from reynard.effelsberg import config as config_manager
 from reynard.receiver import get_receiver
 
 log = logging.getLogger('reynard.effelsberg.cam_server')
@@ -118,17 +118,35 @@ class EffCAMServer(AsyncDeviceServer):
     @return_reply(Str())
     def request_arm(self, req):
         """Arm the controller"""
-        self._device_armed.set_value(True)
-        self.ioloop.add_callback(self._controller.start)
-        return ("ok","armed")
+        @coroutine
+        def start_controller():
+            try:
+                yield self._controller.start()
+            except Exception as error:
+                req.reply("fail","Unknown error: {0}".format(str(error)))
+            else:
+                req.reply("ok","effcam armed")
+                self._device_armed.set_value(True)
+        if self._device_armed.value():
+            return ("fail","Effcam is already armed")
+        self.ioloop.add_callback(start_controller)
+        raise AsyncReply
 
     @request()
     @return_reply(Str())
     def request_disarm(self, req):
         """disarm the controller"""
-        self._device_armed.set_value(False)
-        self.ioloop.add_callback(self._controller.stop)
-        return ("ok","disarmed")
+        @coroutine
+        def stop_controller():
+            try:
+                yield self._controller.stop()
+            except Exception as error:
+                req.reply("fail","Unknown error: {0}".format(str(error)))
+            else:
+                req.reply("ok","effcam disarmed")
+                self._device_armed.set_value(False)
+        self.ioloop.add_callback(stop_controller)
+        raise AsyncReply
 
 
 class EffController(object):
@@ -164,14 +182,13 @@ class EffController(object):
     @coroutine
     def start(self):
         self.status.set_value("starting")
-        yield self.update_firmware()
+        self._backend = self.cam_server._backends["ubi"]
         self.sensors.scannum.set_sampling_strategy('event')
         self.sensors.subscannum.set_sampling_strategy('event')
         self.sensors.observing.set_sampling_strategy('event')
-        #yield self.sensors.scannum.get_value()
-        self.sensors.scannum.register_listener(self.scan_handler)
         log.debug("starting controller")
         self.status.set_value("waiting_for_scan_number_change")
+        self.sensors.scannum.register_listener(self.scan_handler)
 
     @coroutine
     def stop(self):
@@ -185,7 +202,18 @@ class EffController(object):
         self.sensors.observing.set_sampling_strategy('none')
         log.debug("stopping controller")
         log.debug("stopping all active observations")
+        try:
+            yield self.stop_nodes()
+            yield self.deconfigure_nodes()
+        except Exception as error:
+            log.exception("Error on stop and deconfigure nodes")
         self.status.set_value("idle")
+        self.cam_server._device_armed.set_value(False)
+
+    @coroutine
+    def restart(self):
+        yield self.stop()
+        yield self.start()
 
     @coroutine
     def observing_status_handler(self,rt,t,status,value):
@@ -194,9 +222,15 @@ class EffController(object):
         self.status.set_value("starting_backends")
         log.debug("Telescope entered 'Observing' state: Triggering observation start")
         self.sensors.observing.unregister_listener(self.observing_status_handler)
-        self.sensors.observing.register_listener(self.not_observing_status_handler)
-        log.debug("Registering status change handler")
-        self.status.set_value("waiting_status_change_from_observe")
+        try:
+            yield self.start_nodes()
+        except Exception as error:
+            log.exception("Error on start nodes")
+            yield self.stop()
+        else:
+            self.sensors.observing.register_listener(self.not_observing_status_handler)
+            log.debug("Registering status change handler")
+            self.status.set_value("waiting_status_change_from_observe")
 
     @coroutine
     def not_observing_status_handler(self,rt,t,status,value):
@@ -205,7 +239,13 @@ class EffController(object):
         log.debug("Deregistering status change handler")
         self.sensors.observing.unregister_listener(self.not_observing_status_handler)
         log.debug("Triggering observation stop")
-        self.status.set_value("idle")
+        try:
+            yield self.stop_nodes()
+        except Exception as error:
+            log.exception("Error on stop nodes")
+            yield self.stop()
+        else:
+            self.status.set_value("idle")
 
     @coroutine
     def subscan_handler(self,rt,t,status,value):
@@ -221,38 +261,60 @@ class EffController(object):
         self.status.set_value("waiting_status_change_to_observe")
 
     @coroutine
-    def configure(self):
-        source_name = yield self.sensors.source_name.get_value()
-        receiver = yield self.sensors.receiver.get_value()
-        project = yield self.sensors.project.get_value()
-        log.debug("Configuring for observation of source '{0}' with receiver '{1}' for project '{2}'".format(
+    def configure_nodes(self):
+        self.status.set_value("configuring_backends")
+        # Requst a status dump from the status server
+        json_request = yield self.cam_server._status_server.req.json()
+        if not json_request.reply.reply_ok():
+            msg = "Error on JSON request to status server: {0}".format(str(json_request.messages))
+            raise Exception(msg)
+        status_string = json_request.reply.arguments[1]
+        log.debug("Packed status: {0}".format(status_string))
+        conf = unpack_dict(status_string)
+        log.debug("Unpacked status: {0}".format(str(conf)))
+        source_name = conf["source-name"]
+        receiver = conf["receiver"]
+        project = conf["project"]
+        log.info("Configuring for observation of source '{0}' with receiver '{1}' for project '{2}'".format(
             source_name,receiver,project))
         receiver_instance = get_receiver("effelsberg",receiver)()
         capture_nodes = receiver_instance.get_capture_nodes()
+        log.debug("Nodes to be configured: {0}".format(capture_nodes))
         tag = parse_tag(source_name)
-        template = config.get_config(project,receiver,tag)
+        log.debug("Configurations tag from source name: {0}".format(tag))
+        template = config_manager.get_config(project,receiver,tag)
+        log.debug("Found configuration template: {0}".format(template))
         config_dict = json.loads(Template(template).render(nodes=capture_nodes))
-        status_request = yield self.cam_server._status_server.req.json()
-        msg,status_string = status_request.reply.arguments
+        log.debug("Generated configuration: {0}".format(config_dict))
+        log.debug("Requesting backend configure with 30 second timeout")
+        configure_respose = yield self._backend.req.configure(pack_dict(config_dict),status_string,timeout=30)
+        if not configure_respose.reply.reply_ok():
+            msg = "Error on configure request to backend: {0}".format(str(configure_respose.messages))
+            raise Exception(msg)
 
-        print "FROM EFFCAM"
-        print config_dict
-        print status_string
-        backend = self.cam_server._backends["ubi"]
+    @coroutine
+    def start_nodes(self):
+        response = yield self._backend.req.start(timeout=20)
+        if not response.reply.reply_ok():
+            raise Exception("Error on backend start request: {0}".format(response.messages))
 
-        configure_respose = yield backend.req.configure(pack_dict(config_dict),status_string)
-        for ii,arg in enumerate(configure_respose.reply.arguments):
-            print ii,arg
+    @coroutine
+    def stop_nodes(self):
+        # wait until backend is
+        response = yield self._backend.req.stop(timeout=20)
+        if not response.reply.reply_ok():
+            raise Exception("Error on backend stop request: {0}".format(response.messages))
 
+    @coroutine
+    def deconfigure_nodes(self):
+        # wait until backend is
+        response = yield self._backend.req.deconfigure(timeout=20)
+        if not response.reply.reply_ok():
+            raise Exception("Error on backend deconfigure request: {0}".format(response.messages))
 
     @coroutine
     def scan_handler(self,rt,t,status,value):
-        # Check that previous observation has been completed
-        # Deregister any remaining handlers
-        # Check number of subscans
-        # if more than 1:
-        #    Add subscan handler
-        # register status change handler
+        """scan handler"""
         with (yield lock.acquire()):
             log.debug("Received new scan number: {0}".format(value))
             log.debug("Deregistering handlers")
@@ -260,13 +322,22 @@ class EffController(object):
             self.sensors.observing.unregister_listener(self.observing_status_handler)
             self.sensors.subscannum.unregister_listener(self.subscan_handler)
             log.debug("Stopping any ongoing observations")
+            try:
+                yield self.stop_nodes()
+                yield self.deconfigure_nodes()
+            except Exception as error:
+                log.warning(str(error))
 
-            #Update firmware
-            #Will only update if the receiver and/or frequency has changed
             yield self.update_firmware()
-            yield self.configure()
-            yield self.update_firmware()
-            self.status.set_value("configuring_backends")
+
+            print "Config request"
+            try:
+                yield self.configure_nodes()
+            except Exception as error:
+                log.exception(str(error))
+                yield self.stop()
+                return
+            print "Post request"
             self.scan_number = int(value)
             nsubscans = yield self.sensors.numsubscans.get_value()
             nsubscans = int(nsubscans)
@@ -280,4 +351,6 @@ class EffController(object):
                 self.status.set_value("waiting_status_change_to_observe")
             else:
                 self.ioloop.add_callback(lambda: self.observing_status_handler(*reading))
+
+
 

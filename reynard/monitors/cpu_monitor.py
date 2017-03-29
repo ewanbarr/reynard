@@ -24,9 +24,7 @@ class CpuMonitor(Monitor):
     def update_values(self):
         percents = psutil.cpu_percent(percpu=True)
         for cpu_idx,percent in enumerate(percents):
-            log.debug("cpu{0:02d}_percent: {1:.1f} %".format(cpu_idx,percent))
             self._sensors["cpu%02d_percent"%cpu_idx].set_value(percent)
-            log.debug("cpu{0:02d}_temperature: {1:.1f} C".format(cpu_idx,25.0))
             self._sensors["cpu%02d_temperature"%cpu_idx].set_value(25.0)
 
 if __name__ == "__main__":

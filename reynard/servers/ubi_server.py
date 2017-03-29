@@ -67,7 +67,7 @@ class UniversalBackendInterface(AsyncDeviceServer):
                         print "---------------"
                         print node["pipelines"]
                         print "---------------"
-                        response = yield client.req.configure(pack_dict(node["pipelines"]),sensors)
+                        response = yield client.req.configure(pack_dict(node["pipelines"]),sensors,timeout=30)
                         print response
                         break
                 else:
@@ -81,31 +81,39 @@ class UniversalBackendInterface(AsyncDeviceServer):
         self.ioloop.add_callback(lambda: configure(unpack_dict(config)))
         raise AsyncReply
 
+    @coroutine
+    def _all_nodes_request(self,req,cmd):
+        futures = {}
+        for name,client in self._nodes.items():
+            futures[name] = client.req[cmd](timeout=20.0)
+        for name,future in futures.items():
+            response = yield future
+            if not response.reply.reply_ok():
+                msg = "Failure on '{0}' request to node '{1}': {2}".format(
+                    cmd,name,str(response.messages))
+                req.reply("fail",msg)
+                return
+        req.reply("ok","{0} request complete".format(cmd))
+
     @request()
     @return_reply(Str())
     def request_start(self, req):
         """start"""
-        @coroutine
-        def start():
-            pass
+        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"start"))
         raise AsyncReply
 
     @request()
     @return_reply(Str())
     def request_stop(self, req):
         """stop"""
-        @coroutine
-        def stop():
-            pass
+        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"stop"))
         raise AsyncReply
 
     @request()
     @return_reply(Str())
     def request_deconfigure(self, req):
         """deconfig"""
-        @coroutine
-        def deconfigure():
-            pass
+        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"deconfigure"))
         raise AsyncReply
 
     @request(Str(),Str(),Int())

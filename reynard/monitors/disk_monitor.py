@@ -36,9 +36,7 @@ class DiskMonitor(Monitor):
                 status = Sensor.WARN
             else:
                 status = Sensor.NOMINAL
-            log.debug("{0}_partition_size: {1:.2f} GB".format(name,size))
             self._sensors["%s_partition_size"%name].set_value(size)
-            log.debug("{0}_partition_avail: {1:.2f} GB".format(name,avail))
             self._sensors["%s_partition_avail"%name].set_value(avail,status)
 
 
