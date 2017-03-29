@@ -2,7 +2,7 @@ import logging
 import requests
 import time
 import re
-import pkg_resources
+import json
 from jinja2 import Template
 from lxml import etree
 from tornado.gen import coroutine, Return
@@ -11,10 +11,19 @@ from tornado.ioloop import PeriodicCallback
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete, Address, Struct
 from katcp.resource_client import KATCPClientResource
-from reynard.utils import doc_inherit
+from reynard.utils import doc_inherit, escape_string, pack_dict
+from reynard.effelsberg import config
+from reynard.receiver import get_receiver
 
 log = logging.getLogger('reynard.effelsberg.cam_server')
 lock = Lock()
+
+def parse_tag(source_name):
+    split = source_name.split("_")
+    if len(split) == 1:
+        return "default"
+    else:
+        return split[-1]
 
 class EffCAMServer(AsyncDeviceServer):
     """The master pulsar backend control server for
@@ -218,18 +227,22 @@ class EffController(object):
         project = yield self.sensors.project.get_value()
         log.debug("Configuring for observation of source '{0}' with receiver '{1}' for project '{2}'".format(
             source_name,receiver,project))
+        receiver_instance = get_receiver("effelsberg",receiver)()
+        capture_nodes = receiver_instance.get_capture_nodes()
+        tag = parse_tag(source_name)
+        template = config.get_config(project,receiver,tag)
+        config_dict = json.loads(Template(template).render(nodes=capture_nodes))
+        status_request = yield self.cam_server._status_server.req.json()
+        msg,status_string = status_request.reply.arguments
 
-        nodes = ["pacifix0","pacifix1","pacifix2"]
-        template = pkg_resources.resource_filename("reynard","config/template.json")
-        with open(template) as f:
-            config = Template(f.read())
-        config.render(nodes)
-        json_config = json.loads(config)
+        print "FROM EFFCAM"
+        print config_dict
+        print status_string
+        backend = self.cam_server._backends["ubi"]
 
-        #config = config_helper(receiver)
-        #for node in config.capture_nodes:
-        #    config.processing_pipeline
-        # find nodes that need configured
+        configure_respose = yield backend.req.configure(pack_dict(config_dict),status_string)
+        for ii,arg in enumerate(configure_respose.reply.arguments):
+            print ii,arg
 
 
     @coroutine
@@ -251,23 +264,15 @@ class EffController(object):
             #Update firmware
             #Will only update if the receiver and/or frequency has changed
             yield self.update_firmware()
-
-
-            source_name = yield self.sensors.source_name.get_value()
-            receiver = yield self.sensors.receiver.get_value()
-            log.debug("Configuring for observation of source '{0}' with receiver '{1}'".format(
-                source_name,receiver))
+            yield self.configure()
             yield self.update_firmware()
             self.status.set_value("configuring_backends")
-
-
             self.scan_number = int(value)
             nsubscans = yield self.sensors.numsubscans.get_value()
             nsubscans = int(nsubscans)
             if nsubscans > 1:
                 log.debug("Scan has {0} sub scans. Registering subscan handlers.".format(nsubscans))
                 self.sensors.subscannum.register_listener(self.subscan_handler)
-
             reading = yield self.sensors.observing.get_reading()
             if not reading.value:
                 self.sensors.observing.register_listener(self.observing_status_handler)

@@ -7,7 +7,7 @@ from katcp.kattypes import request, return_reply, Int, Str, Discrete
 from katcp.resource_client import KATCPClientResource
 from katcp.ioloop_manager import with_relative_timeout
 from reynard.monitors import DiskMonitor,CpuMonitor,MemoryMonitor
-from reynard.utils import doc_inherit, unescape_string
+from reynard.utils import doc_inherit, decode_katcp_message, unpack_dict, pack_dict
 
 log = logging.getLogger("reynard.ubi_server")
 
@@ -52,25 +52,33 @@ class UniversalBackendInterface(AsyncDeviceServer):
         if name not in self._nodes.keys():
             raise KeyError("No node exists with name '{name}'".format(name=name))
         self._nodes[name].stop()
-        self._nodes[name].join()
         del self._nodes[name]
 
-    @request(Str())
-    @return_reply(Str())
-    def request_configure(self, req, config):
+    @request(Str(),Str())
+    @return_reply(Str(),Str())
+    def request_configure(self, req, config, sensors):
         """config"""
         @coroutine
         def configure(config):
             for node in config["nodes"]:
-                pass
+                for name,client in self._nodes.items():
+                    if client.address == (node["ip"],node["port"]):
+                        print "Node found with name '{0}'".format(name)
+                        print "---------------"
+                        print node["pipelines"]
+                        print "---------------"
+                        response = yield client.req.configure(pack_dict(node["pipelines"]),sensors)
+                        print response
+                        break
+                else:
+                    print "No node found at address {0}".format((node["ip"],node["port"]))
+                print "FROM UBI"
+                print node
+            req.reply("ok","configured")
 
-        try:
-            config = json.loads(unescape_string(config))
-        except Exception as error:
-            return ("fail",str(error))
-
-        self.ioloop.add_callback(lambda: configure(config))
-
+        print unpack_dict(config)
+        print unpack_dict(sensors)
+        self.ioloop.add_callback(lambda: configure(unpack_dict(config)))
         raise AsyncReply
 
     @request()

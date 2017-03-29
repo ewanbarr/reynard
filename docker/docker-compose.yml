@@ -7,7 +7,7 @@ services:
     ports:
       - 5000:5000
     image: reynard
-    command: reynard_eff_status_server.py -p 5000
+    command: reynard_eff_status_server.py -p 5000 --dummy
   effcam-server:
     build: .
     container_name: effcam-server
@@ -35,7 +35,7 @@ services:
     ports:
       - 5004:5004
     image: reynard
-    command: reynard_ubn_server.py --port 5004 --log_level DEBUG
+    command: reynard_ubn_server.py --port 5004 --log_level INFO
   ubn-server-1:
     build: .
     container_name: ubn-server-1
@@ -43,7 +43,7 @@ services:
     ports:
       - 5005:5005
     image: reynard
-    command: reynard_ubn_server.py --port 5005 --log_level DEBUG
+    command: reynard_ubn_server.py --port 5005 --log_level INFO
   ubn-server-2:
     build: .
     container_name: ubn-server-2
@@ -51,4 +51,4 @@ services:
     ports:
       - 5006:5006
     image: reynard
-    command: reynard_ubn_server.py --port 5006 --log_level DEBUG
+    command: reynard_ubn_server.py --port 5006 --log_level INFO

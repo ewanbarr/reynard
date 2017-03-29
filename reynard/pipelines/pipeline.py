@@ -2,6 +2,8 @@
 Wrappers for generic compute pipelines on a node
 """
 import logging
+import os
+import binascii
 import docker
 from threading import Thread, Event, Lock
 
@@ -32,7 +34,12 @@ PIPELINE_REGISTRY = {}
 class PipelineError(Exception):
     pass
 
-def reynard_pipeline(name,description="",version="",requires_nvidia=False):
+def reynard_pipeline(name,
+                     required_sensors=None,
+                     required_containers=None,
+                     description="",
+                     version="",
+                     requires_nvidia=False):
     def wrap(cls):
         if PIPELINE_REGISTRY.has_key(name):
             log.warning("Conflicting pipeline names '{0}'".format(name))
@@ -40,7 +47,8 @@ def reynard_pipeline(name,description="",version="",requires_nvidia=False):
         "description":description,
         "requires_nvidia":requires_nvidia,
         "version":"",
-        "class":cls
+        "class":cls,
+        "required_sensors":required_sensors
         }
         return cls
     return wrap
@@ -133,15 +141,15 @@ class Pipeline(Stateful):
         else:
             self.state = next_state
 
-    def configure(self,config):
+    def configure(self,config, sensors):
         with self._lock:
             log.info("Configuring pipeline")
             if self.state != "idle":
                 raise PipelineError("Can only configure pipeline in idle state")
             self.state = "configuring"
-            self._call("ready",self._configure,config)
+            self._call("ready",self._configure, config, sensors)
 
-    def _configure(self,config):
+    def _configure(self,config, sensors):
         raise NotImplementedError
 
     def stop(self,failed=False):
@@ -207,8 +215,11 @@ class Pipeline(Stateful):
 class DockerHelper(object):
     def __init__(self):
         self._client = docker.from_env()
+        self._salt = "_{0}".format(binascii.hexlify(os.urandom(16)))
 
     def run(self, *args, **kwargs):
+        if kwargs.has_key("name"):
+            kwargs["name"] = kwargs["name"] + self._salt
         try:
             return self._client.containers.run(*args,**kwargs)
         except Exception as error:
@@ -223,7 +234,10 @@ class DockerHelper(object):
         return _run_container(*args,**kwargs)
 
     def get(self, name):
-        return self._client.containers.get(name)
+        return self._client.containers.get(name + self._salt)
+
+    def get_name(self,name):
+        return name + self._salt
 
 
 

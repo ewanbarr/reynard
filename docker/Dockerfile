@@ -31,7 +31,7 @@ RUN apt-get update -y && \
     git checkout tags/v0.6.1 && \
     python setup.py install
 
-ENV ARSE 1
+ENV ARSE 22
 
 # Reynard-dev
 RUN cd soft && \
