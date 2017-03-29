@@ -63,6 +63,7 @@ class Junk2Db2Null(Pipeline):
         # Note: As dada keys are hexidecimal, they can't start with any letter later
         # than "f" in the alphabet. To protect against "cannot parse key" type errors
         # we prefix the dada key name with the letter "f"
+        # Note: DADA keys have a tendency to clash, looking for a workaround now
         log.debug("Creating dada buffer [key: {0}]".format(self._dada_key))
         self._docker.run("psr-capture","dada_db -k {0} -n 8 -b 16000000".format(self._dada_key),
             remove=True, ipc_mode="host")
