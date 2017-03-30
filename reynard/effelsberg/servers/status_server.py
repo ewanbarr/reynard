@@ -266,8 +266,8 @@ class JsonStatusServer(AsyncDeviceServer):
             self._controlled.add(name)
             return ("ok","{0} under user control".format(name))
 
-    @request(Str())
-    @return_reply(Str())
+    @request()
+    @return_reply(Int())
     def request_sensor_list_controlled(self, req):
         """List all controlled sensors"""
         for ii,name in enumerate(list(self._controlled)):
