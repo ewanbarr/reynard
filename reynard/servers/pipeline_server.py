@@ -7,7 +7,7 @@ from katcp.resource_client import KATCPClientResource
 from katcp.ioloop_manager import with_relative_timeout
 from reynard.monitors import DiskMonitor,CpuMonitor,MemoryMonitor
 from reynard.pipelines import PIPELINE_REGISTRY, PIPELINE_STATES, PipelineError
-from reynard.utils import doc_inherit
+from reynard.utils import doc_inherit, unpack_dict
 
 log = logging.getLogger("reynard.pipeline_server")
 
@@ -43,18 +43,27 @@ class PipelineServer(AsyncDeviceServer):
                 req.reply("ok","ok")
         self.ioloop.add_callback(callback)
 
-    @request(Str())
+    @request(Str(), Str())
     @return_reply(Str())
-    def request_configure(self, req, config):
+    def request_configure(self, req, config, sensors):
         """Return available pipelines"""
-        self._async_safe_call(req, lambda: self._pipeline.configure(config))
+        try:
+            config = unpack_dict(config)
+            sensors = unpack_dict(sensors)
+        except Exception as error:
+            return ("fail",str(error))
+        self._async_safe_call(req, lambda: self._pipeline.configure(config, sensors))
         raise AsyncReply
 
-    @request()
+    @request(Str())
     @return_reply(Str())
-    def request_start(self, req):
+    def request_start(self, req, sensors):
         """Return available pipelines"""
-        self._async_safe_call(req, self._pipeline.start)
+        try:
+            sensors = unpack_dict(sensors)
+        except Exception as error:
+            return ("fail",str(error))
+        self._async_safe_call(req, lambda: self._pipeline.start(sensors))
         raise AsyncReply
 
     @request()

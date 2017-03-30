@@ -1,6 +1,7 @@
 import re
 import codecs
 import sys
+import json
 from functools import wraps
 from katcp import DeviceClient
 
@@ -33,7 +34,11 @@ def decode_katcp_message(s):
     """
     return unescape_string(s).replace("\_"," ")
 
+def pack_dict(x):
+    return escape_string(json.dumps(x,separators=(',',':')))
 
+def unpack_dict(x):
+    return json.loads(decode_katcp_message(x))
 
 class StreamClient(DeviceClient):
     def __init__(self, server_host, server_port, stream=sys.stdout):

@@ -12,7 +12,7 @@ from tornado.ioloop import PeriodicCallback
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete, Address, Struct
 from reynard.utils import doc_inherit
-from reynard.utils import escape_string
+from reynard.utils import escape_string, pack_dict
 from reynard.effelsberg.servers import EFF_JSON_CONFIG
 
 TYPE_CONVERTER = {
@@ -247,6 +247,15 @@ class JsonStatusServer(AsyncDeviceServer):
         self.ioloop.add_callback(convert)
         raise AsyncReply
 
+    @request()
+    @return_reply(Str())
+    def request_json(self,req):
+        """request an JSON version of the status message"""
+        out = {}
+        for name,sensor in self._sensors.items():
+            out[name] = sensor.value()
+        return ("ok",pack_dict(out))
+
     @request(Str())
     @return_reply(Str())
     def request_sensor_control(self, req, name):
@@ -256,6 +265,14 @@ class JsonStatusServer(AsyncDeviceServer):
         else:
             self._controlled.add(name)
             return ("ok","{0} under user control".format(name))
+
+    @request(Str())
+    @return_reply(Str())
+    def request_sensor_list_controlled(self, req):
+        """List all controlled sensors"""
+        for ii,name in enumerate(list(self._controlled)):
+            req.inform("{0} -- {1}".format(name,self._sensors[name].value()))
+        return ("ok",ii)
 
     @request(Str())
     @return_reply(Str())
@@ -282,7 +299,7 @@ class JsonStatusServer(AsyncDeviceServer):
         except Exception as error:
             return ("fail",str(error))
         else:
-            return ("ok","Status set to {0}".format(self._sensors[name].value()))
+            return ("ok","{0} set to {1}".format(name,self._sensors[name].value()))
 
     def setup_sensors(self):
         """Set up basic monitoring sensors.

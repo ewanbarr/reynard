@@ -2,7 +2,10 @@
 Wrappers for generic compute pipelines on a node
 """
 import logging
+import os
+import binascii
 import docker
+import weakref
 from threading import Thread, Event, Lock
 
 log = logging.getLogger("reynard.pipelines")
@@ -32,7 +35,12 @@ PIPELINE_REGISTRY = {}
 class PipelineError(Exception):
     pass
 
-def reynard_pipeline(name,description="",version="",requires_nvidia=False):
+def reynard_pipeline(name,
+                     required_sensors=None,
+                     required_containers=None,
+                     description="",
+                     version="",
+                     requires_nvidia=False):
     def wrap(cls):
         if PIPELINE_REGISTRY.has_key(name):
             log.warning("Conflicting pipeline names '{0}'".format(name))
@@ -40,7 +48,8 @@ def reynard_pipeline(name,description="",version="",requires_nvidia=False):
         "description":description,
         "requires_nvidia":requires_nvidia,
         "version":"",
-        "class":cls
+        "class":cls,
+        "required_sensors":required_sensors
         }
         return cls
     return wrap
@@ -79,6 +88,7 @@ class Watchdog(Thread):
             elif self._is_dead(event):
                 exit_code = int(event["Actor"]["Attributes"]["exitCode"])
                 log.debug("Watchdog activated on container '{0}'".format(self._name))
+                log.debug("Container logs: {0}".format(self._client.api.logs(self._name)))
                 self._callback(exit_code)
 
 
@@ -114,10 +124,11 @@ class Pipeline(Stateful):
         def callback(exit_code):
             log.info("Watchdog recieved exit code {1} from '{0}'".format(name,exit_code))
             if persistent or exit_code != 0:
-                log.info("WATCHDOG FAILURE")
+                log.error("Watchdog on container {0} saw unexpected exit [code: {1}]".format(
+                    name,exit_code))
                 self.stop(failed=True)
             else:
-                log.info("WATCHDOG STOPPING")
+                log.debug("Watchdog on container {0} triggered".format(name))
                 self.stop()
         guard = Watchdog(name,self._standdown,callback)
         guard.start()
@@ -133,15 +144,15 @@ class Pipeline(Stateful):
         else:
             self.state = next_state
 
-    def configure(self,config):
+    def configure(self,config, sensors):
         with self._lock:
             log.info("Configuring pipeline")
             if self.state != "idle":
                 raise PipelineError("Can only configure pipeline in idle state")
             self.state = "configuring"
-            self._call("ready",self._configure,config)
+            self._call("ready",self._configure, config, sensors)
 
-    def _configure(self,config):
+    def _configure(self,config, sensors):
         raise NotImplementedError
 
     def stop(self,failed=False):
@@ -158,14 +169,14 @@ class Pipeline(Stateful):
     def _stop(self):
         raise NotImplementedError
 
-    def start(self):
+    def start(self, sensors):
         with self._lock:
             log.info("Starting pipeline")
             if self.state != "ready":
                 raise PipelineError("Pipeline can only be started from ready state")
             self.state = "starting"
             self._standdown.clear()
-            self._call("running",self._start)
+            self._call("running", self._start, sensors)
 
     def _start(self):
         raise NotImplementedError
@@ -207,8 +218,11 @@ class Pipeline(Stateful):
 class DockerHelper(object):
     def __init__(self):
         self._client = docker.from_env()
+        self._salt = "_{0}".format(binascii.hexlify(os.urandom(16)))
 
     def run(self, *args, **kwargs):
+        if kwargs.has_key("name"):
+            kwargs["name"] = kwargs["name"] + self._salt
         try:
             return self._client.containers.run(*args,**kwargs)
         except Exception as error:
@@ -223,7 +237,10 @@ class DockerHelper(object):
         return _run_container(*args,**kwargs)
 
     def get(self, name):
-        return self._client.containers.get(name)
+        return self._client.containers.get(name + self._salt)
+
+    def get_name(self,name):
+        return name + self._salt
 
 
 

@@ -1,0 +1,57 @@
+{
+    "backend":"eff-universal-v1.0",
+    "nodes": [
+    {% for node in nodes%}
+    {
+        "ip": "{{node.ip}}",
+        "port": {{node.port}},
+        "pipelines":
+        [
+            {
+                "name":"pipeline-0",
+                "pipeline_name":"TestPipeline",
+                "config":
+                {
+                    "dada_header_params":
+                    {
+                        "filesize":2500000000,
+                        "telescope":"Effelsberg",
+                        "instrument":"eff-universal-v1.0",
+                        "bandwidth":16,
+                        "tsamp":0.0625,
+                        "nbit":8,
+                        "ndim":2,
+                        "npol":2,
+                        "nchan":1
+                    },
+                    "key":"0x000001",
+                    "runtime":15
+                }
+            },
+            {
+                "name":"pipeline-1",
+                "pipeline_name":"TestPipeline",
+                "config":
+                {
+                    "dada_header_params":
+                    {
+                        "filesize":2500000000,
+                        "telescope":"Effelsberg",
+                        "instrument":"eff-universal-v1.0",
+                        "bandwidth":16,
+                        "tsamp":0.0625,
+                        "nbit":8,
+                        "ndim":2,
+                        "npol":2,
+                        "nchan":1
+                    },
+                    "key":"0x000003",
+                    "runtime":30
+                }
+            }
+        ]
+    }
+    {% if not loop.last %},{% endif %}
+    {% endfor %}
+    ]
+}

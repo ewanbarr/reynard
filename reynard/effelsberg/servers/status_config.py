@@ -1,5 +1,11 @@
 ### any updater functions that can't be made into lambdas should go here ###
 
+def _build_reciever_name(data):
+    prefix = "P" if data["foc-prim"] else "S"
+    wavelength = str(data["wavelength"])
+    receiver = prefix + wavelength.replace(".","-")
+    return receiver
+
 EFF_JSON_CONFIG = {
     "lmst": {"type":"float", "units":"hours", "default":0.0,
                 "description":"Local mean sidereal time (LMST)",
@@ -81,7 +87,7 @@ EFF_JSON_CONFIG = {
                    "updater":lambda data: data["fe-rxfrq"]},
     "receiver" : {"type":"string", "default":"",
                   "description":"The currently active receiver (wavelength.version)",
-                  "updater":lambda data: str(data["wavelength"])},
+                  "updater":lambda data: _build_reciever_name(data)},
     "focus" : {"type":"string", "default":"",
                "description":"Is the reciever at the primary or secondary focus?",
                "updater":lambda data: "primary" if data["foc-prim"] else "secondary"},

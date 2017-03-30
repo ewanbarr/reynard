@@ -12,7 +12,7 @@ from tornado.ioloop import PeriodicCallback
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete, Address, Struct
 from reynard.utils import doc_inherit
-from reynard.utils import escape_string
+from reynard.utils import escape_string, pack_dict
 from reynard.effelsberg.servers import EFF_JSON_CONFIG
 
 log = logging.getLogger('reynard.effelsberg.dummy_status_server')
@@ -80,7 +80,14 @@ class DummyJsonStatusServer(AsyncDeviceServer):
         else:
             return ("ok","status set to {0}".format(self._sensors[name].value()))
 
-
+    @request()
+    @return_reply(Str())
+    def request_json(self,req):
+        """request an JSON version of the status message"""
+        out = {}
+        for name,sensor in self._sensors.items():
+            out[name] = sensor.value()
+        return ("ok",pack_dict(out))
 
 
 

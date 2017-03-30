@@ -1,4 +1,7 @@
-import datetime
+import os
+import binascii
+from datetime import datetime
+import jinja2
 
 DADA_HEADER = """
 HEADER       DADA                # Distributed aquisition and data analysis
@@ -66,7 +69,10 @@ DADA_DEFAULTS = {
     "nchan":1
 }
 
-def dada_key_file(key):
+def dada_keygen():
+    return binascii.hexlify(os.urandom(8))
+
+def make_dada_key_string(key):
     return "DADA INFO:\nkey {0}".format(key)
 
 def dada_defaults():
@@ -77,6 +83,11 @@ def dada_defaults():
     "utc_start":datetime.utcnow().strftime('%Y-%m-%d-%H:%M:%S.%f')
     })
     return out
+
+def render_dada_header(overrides):
+    defaults = dada_defaults()
+    defaults.update(overrides)
+    return jinja2.Template(DADA_HEADER).render(**defaults)
 
 
 

@@ -7,7 +7,7 @@ from katcp.kattypes import request, return_reply, Int, Str, Discrete
 from katcp.resource_client import KATCPClientResource
 from katcp.ioloop_manager import with_relative_timeout
 from reynard.monitors import DiskMonitor,CpuMonitor,MemoryMonitor
-from reynard.utils import doc_inherit, unescape_string
+from reynard.utils import doc_inherit, decode_katcp_message, unpack_dict, pack_dict
 
 log = logging.getLogger("reynard.ubi_server")
 
@@ -52,52 +52,68 @@ class UniversalBackendInterface(AsyncDeviceServer):
         if name not in self._nodes.keys():
             raise KeyError("No node exists with name '{name}'".format(name=name))
         self._nodes[name].stop()
-        self._nodes[name].join()
         del self._nodes[name]
 
-    @request(Str())
-    @return_reply(Str())
-    def request_configure(self, req, config):
+    @request(Str(),Str())
+    @return_reply(Str(),Str())
+    def request_configure(self, req, config, sensors):
         """config"""
         @coroutine
         def configure(config):
             for node in config["nodes"]:
-                pass
+                for name,client in self._nodes.items():
+                    if client.address == (node["ip"],node["port"]):
+                        print "Node found with name '{0}'".format(name)
+                        print "---------------"
+                        print node["pipelines"]
+                        print "---------------"
+                        response = yield client.req.configure(pack_dict(node["pipelines"]),sensors,timeout=30)
+                        print response
+                        break
+                else:
+                    print "No node found at address {0}".format((node["ip"],node["port"]))
+                print "FROM UBI"
+                print node
+            req.reply("ok","configured")
 
-        try:
-            config = json.loads(unescape_string(config))
-        except Exception as error:
-            return ("fail",str(error))
-
-        self.ioloop.add_callback(lambda: configure(config))
-
+        print unpack_dict(config)
+        print unpack_dict(sensors)
+        self.ioloop.add_callback(lambda: configure(unpack_dict(config)))
         raise AsyncReply
 
-    @request()
+    @coroutine
+    def _all_nodes_request(self,req,cmd,*args,**kwargs):
+        futures = {}
+        for name,client in self._nodes.items():
+            futures[name] = client.req[cmd](*args,**kwargs)
+        for name,future in futures.items():
+            response = yield future
+            if not response.reply.reply_ok():
+                msg = "Failure on '{0}' request to node '{1}': {2}".format(
+                    cmd,name,str(response.messages))
+                req.reply("fail",msg)
+                return
+        req.reply("ok","{0} request complete".format(cmd))
+
+    @request(Str())
     @return_reply(Str())
-    def request_start(self, req):
+    def request_start(self, req, sensors):
         """start"""
-        @coroutine
-        def start():
-            pass
+        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"start",sensors,timeout=20.0))
         raise AsyncReply
 
     @request()
     @return_reply(Str())
     def request_stop(self, req):
         """stop"""
-        @coroutine
-        def stop():
-            pass
+        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"stop",timeout=20.0))
         raise AsyncReply
 
     @request()
     @return_reply(Str())
     def request_deconfigure(self, req):
         """deconfig"""
-        @coroutine
-        def deconfigure():
-            pass
+        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"deconfigure",timeout=20.0))
         raise AsyncReply
 
     @request(Str(),Str(),Int())
