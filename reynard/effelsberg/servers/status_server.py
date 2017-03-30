@@ -268,6 +268,14 @@ class JsonStatusServer(AsyncDeviceServer):
 
     @request(Str())
     @return_reply(Str())
+    def request_sensor_list_controlled(self, req):
+        """List all controlled sensors"""
+        for ii,name in enumerate(list(self._controlled)):
+            req.inform("{0} -- {1}".format(name,self._sensors[name].value()))
+        return ("ok",ii)
+
+    @request(Str())
+    @return_reply(Str())
     def request_sensor_release(self, req, name):
         """release a sensor from user control"""
         if not self._sensors.has_key(name):
@@ -291,7 +299,7 @@ class JsonStatusServer(AsyncDeviceServer):
         except Exception as error:
             return ("fail",str(error))
         else:
-            return ("ok","Status set to {0}".format(self._sensors[name].value()))
+            return ("ok","{0} set to {1}".format(name,self._sensors[name].value()))
 
     def setup_sensors(self):
         """Set up basic monitoring sensors.

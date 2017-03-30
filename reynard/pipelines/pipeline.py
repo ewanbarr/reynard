@@ -88,6 +88,7 @@ class Watchdog(Thread):
             elif self._is_dead(event):
                 exit_code = int(event["Actor"]["Attributes"]["exitCode"])
                 log.debug("Watchdog activated on container '{0}'".format(self._name))
+                log.debug("Container logs: {0}".format(self._client.api.logs(self._name)))
                 self._callback(exit_code)
 
 

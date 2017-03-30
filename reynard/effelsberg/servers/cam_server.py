@@ -249,16 +249,20 @@ class EffController(object):
 
     @coroutine
     def subscan_handler(self,rt,t,status,value):
-        log.debug("Moved to sub scan {0}".format(value))
-        #stop previous
-        log.debug("Triggering new observation (same configuration)")
-        nsubscans = int(self.sensors.numsubscans.value)
-        if int(value) == nsubscans:
-            log.debug("Last sub scan in set, deregistering subscan handlers")
-            self.sensors.subscannum.unregister_listener(self.subscan_handler)
-        log.debug("Waiting on 'Observing' status")
-        self.sensors.observing.register_listener(self.observing_status_handler)
-        self.status.set_value("waiting_status_change_to_observe")
+        with (yield lock.acquire()):
+            log.debug("Moved to sub scan {0}".format(value))
+            log.debug("Triggering new observation (same configuration)")
+            nsubscans = int(self.sensors.numsubscans.value)
+            if int(value) == nsubscans:
+                log.debug("Last sub scan in set, deregistering subscan handlers")
+                self.sensors.subscannum.unregister_listener(self.subscan_handler)
+            reading = yield self.sensors.observing.get_reading()
+            if not reading.value:
+                self.sensors.observing.register_listener(self.observing_status_handler)
+                log.debug("Waiting on 'Observing' status")
+                self.status.set_value("waiting_status_change_to_observe")
+            else:
+                self.ioloop.add_callback(lambda: self.observing_status_handler(*reading))
 
     @coroutine
     def configure_nodes(self):
@@ -302,7 +306,7 @@ class EffController(object):
         response = yield self._backend.req.start(status_string,timeout=20)
         if not response.reply.reply_ok():
             raise Exception("Error on backend start request: {0}".format(response.messages))
-        #here is where we would send the trigger to the firmware to inject 1PPS tag
+        log.debug("[DUMMY] Sending 1 PPS trigger to firmware")
 
     @coroutine
     def stop_nodes(self):
