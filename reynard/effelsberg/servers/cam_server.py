@@ -251,6 +251,12 @@ class EffController(object):
     def subscan_handler(self,rt,t,status,value):
         with (yield lock.acquire()):
             log.debug("Moved to sub scan {0}".format(value))
+            log.debug("Stopping current observation")
+            try:
+                yield self.stop_nodes()
+            except Exception as error:
+                log.exception("Error on stop nodes")
+                yield self.stop()
             log.debug("Triggering new observation (same configuration)")
             nsubscans = int(self.sensors.numsubscans.value)
             if int(value) == nsubscans:

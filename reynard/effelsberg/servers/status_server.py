@@ -270,9 +270,10 @@ class JsonStatusServer(AsyncDeviceServer):
     @return_reply(Int())
     def request_sensor_list_controlled(self, req):
         """List all controlled sensors"""
-        for ii,name in enumerate(list(self._controlled)):
+        count = len(self._controlled)
+        for name in list(self._controlled):
             req.inform("{0} -- {1}".format(name,self._sensors[name].value()))
-        return ("ok",ii)
+        return ("ok",count)
 
     @request(Str())
     @return_reply(Str())
