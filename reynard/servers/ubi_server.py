@@ -38,6 +38,7 @@ class UniversalBackendInterface(AsyncDeviceServer):
 
     def _add_node(self,name,ip,port):
         """Add a named node."""
+        log.debug("Adding node '{0}' ({1}:{2})".format(name,ip,port))
         if name in self._nodes.keys():
             raise KeyError("Node already added with name '{name}'".format(name=name))
         client = KATCPClientResource(dict(
@@ -49,6 +50,7 @@ class UniversalBackendInterface(AsyncDeviceServer):
 
     def _remove_node(self,name):
         """Remove a client by name."""
+        log.debug("Removing node '{0}'".format(name))
         if name not in self._nodes.keys():
             raise KeyError("No node exists with name '{name}'".format(name=name))
         self._nodes[name].stop()
@@ -60,29 +62,40 @@ class UniversalBackendInterface(AsyncDeviceServer):
         """config"""
         @coroutine
         def configure(config):
+            futures = {}
+            node_count = len(config["nodes"])
+            configured = 0
             for node in config["nodes"]:
+                ip,port = node["ip"],node["port"]
+                log.debug("Searching for node at {0}:{1}".format(ip,port))
                 for name,client in self._nodes.items():
-                    if client.address == (node["ip"],node["port"]):
-                        print "Node found with name '{0}'".format(name)
-                        print "---------------"
-                        print node["pipelines"]
-                        print "---------------"
-                        response = yield client.req.configure(pack_dict(node["pipelines"]),sensors,timeout=30)
-                        print response
+                    if client.address == (ip,port):
+                        log.debug("Found node at {0}:{1} named {2}".format(ip,port,name))
+                        log.debug("Pipeline config for node: {0}".format(node["pipelines"]))
+                        req.inform("Configuring node '{0}' ({1}:{2})".format(name,ip,port))
+                        futures[name] = client.req.configure(pack_dict(node["pipelines"]),sensors,timeout=30)
                         break
                 else:
-                    print "No node found at address {0}".format((node["ip"],node["port"]))
-                print "FROM UBI"
-                print node
-            req.reply("ok","configured")
+                    msg = "No node found at {0}:{1}".format(ip,port)
+                    req.inform(msg)
+                    log.warning(msg)
 
-        print unpack_dict(config)
-        print unpack_dict(sensors)
+            for name, future in futures.items():
+                response = yield future
+                if not response.reply.reply_ok():
+                    req.inform("Configuration failure from node '{0}': {1}".format(name,str(response.messages)))
+                else:
+                    configured += 1
+            if configured >= 1:
+                req.reply("ok","Configured {0} of {1} nodes".format(configured,node_count))
+            else:
+                req.reply("fail","No nodes configured")
         self.ioloop.add_callback(lambda: configure(unpack_dict(config)))
         raise AsyncReply
 
     @coroutine
     def _all_nodes_request(self,req,cmd,*args,**kwargs):
+        log.debug("Sending '{0}' request to all nodes".format(cmd))
         futures = {}
         for name,client in self._nodes.items():
             futures[name] = client.req[cmd](*args,**kwargs)
@@ -91,6 +104,7 @@ class UniversalBackendInterface(AsyncDeviceServer):
             if not response.reply.reply_ok():
                 msg = "Failure on '{0}' request to node '{1}': {2}".format(
                     cmd,name,str(response.messages))
+                log.error(msg)
                 req.reply("fail",msg)
                 return
         req.reply("ok","{0} request complete".format(cmd))
