@@ -5,6 +5,7 @@ import logging
 import os
 import binascii
 import docker
+import weakref
 from threading import Thread, Event, Lock
 
 log = logging.getLogger("reynard.pipelines")
@@ -122,10 +123,11 @@ class Pipeline(Stateful):
         def callback(exit_code):
             log.info("Watchdog recieved exit code {1} from '{0}'".format(name,exit_code))
             if persistent or exit_code != 0:
-                log.info("WATCHDOG FAILURE")
+                log.error("Watchdog on container {0} saw unexpected exit [code: {1}]".format(
+                    name,exit_code))
                 self.stop(failed=True)
             else:
-                log.info("WATCHDOG STOPPING")
+                log.debug("Watchdog on container {0} triggered".format(name))
                 self.stop()
         guard = Watchdog(name,self._standdown,callback)
         guard.start()
@@ -166,14 +168,14 @@ class Pipeline(Stateful):
     def _stop(self):
         raise NotImplementedError
 
-    def start(self):
+    def start(self, sensors):
         with self._lock:
             log.info("Starting pipeline")
             if self.state != "ready":
                 raise PipelineError("Pipeline can only be started from ready state")
             self.state = "starting"
             self._standdown.clear()
-            self._call("running",self._start)
+            self._call("running", self._start, sensors)
 
     def _start(self):
         raise NotImplementedError

@@ -55,11 +55,15 @@ class PipelineServer(AsyncDeviceServer):
         self._async_safe_call(req, lambda: self._pipeline.configure(config, sensors))
         raise AsyncReply
 
-    @request()
+    @request(Str())
     @return_reply(Str())
-    def request_start(self, req):
+    def request_start(self, req, sensors):
         """Return available pipelines"""
-        self._async_safe_call(req, self._pipeline.start)
+        try:
+            sensors = unpack_dict(sensors)
+        except Exception as error:
+            return ("fail",str(error))
+        self._async_safe_call(req, lambda: self._pipeline.start(sensors))
         raise AsyncReply
 
     @request()

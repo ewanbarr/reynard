@@ -294,9 +294,15 @@ class EffController(object):
 
     @coroutine
     def start_nodes(self):
-        response = yield self._backend.req.start(timeout=20)
+        json_request = yield self.cam_server._status_server.req.json()
+        if not json_request.reply.reply_ok():
+            msg = "Error on JSON request to status server: {0}".format(str(json_request.messages))
+            raise Exception(msg)
+        status_string = json_request.reply.arguments[1]
+        response = yield self._backend.req.start(status_string,timeout=20)
         if not response.reply.reply_ok():
             raise Exception("Error on backend start request: {0}".format(response.messages))
+        #here is where we would send the trigger to the firmware to inject 1PPS tag
 
     @coroutine
     def stop_nodes(self):
@@ -329,8 +335,6 @@ class EffController(object):
                 log.warning(str(error))
 
             yield self.update_firmware()
-
-            print "Config request"
             try:
                 yield self.configure_nodes()
             except Exception as error:

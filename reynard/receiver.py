@@ -22,3 +22,6 @@ def get_receiver(telescope,receiver):
         raise InvalidReceiver("No receiver called '{0}' for telescope '{1}'".format(receiver,telescope))
 
 
+
+
+

@@ -33,53 +33,50 @@ class Junk2Db2Null(Pipeline):
         self._volumes = ["/tmp/:/tmp/"]
         self._docker = DockerHelper()
         self._dada_key = None
-        self._key_file = None
-        self._header_file = None
         self._duration = None
+        self._config = None
 
     def _configure(self, config, sensors):
-        header = config["dada_header_params"]
+        self._config = config
+        self._dada_key = config["key"]
+        self._duration = config["runtime"]
+        try:
+            self._deconfigure()
+        except Exception as error:
+            pass
+        # Note: As dada keys are hexidecimal, they can't start with any letter later
+        # than "f" in the alphabet. To protect against "cannot parse key" type errors
+        # we prefix the dada key name with the letter "f"
+        # Note: DADA keys have to have a hexidecimal separation of 2 otherwise they clash
+        log.debug("Creating dada buffer [key: {0}]".format(self._dada_key))
+        self._docker.run("psr-capture","dada_db -k {0} -n 8 -b 16000000".format(self._dada_key),
+            remove=True, ipc_mode="host")
+
+    def _start(self, sensors):
+        header = self._config["dada_header_params"]
         header["ra"] = sensors["ra"]
         header["dec"] = sensors["dec"]
         header["source_name"] = sensors["source-name"]
         header["obs_id"] = "{0}_{1}".format(sensors["scannum"],sensors["subscannum"])
-        self._dada_key = config["key"]
-
-        print "Pipeline to use dada key: {0}".format(self._dada_key)
         dada_header_file = tempfile.NamedTemporaryFile(mode="w",prefix="reynard_dada_header_",dir="/tmp/",delete=False)
         dada_key_file = tempfile.NamedTemporaryFile(mode="w",prefix="reynard_dada_keyfile_",dir="/tmp",delete=False)
         dada_header_file.write(render_dada_header(header))
         dada_key_file.write(make_dada_key_string(self._dada_key))
         dada_header_file.close()
         dada_key_file.close()
-        self._key_file = dada_key_file.name
-        self._header_file = dada_header_file.name
-        self._duration = config["runtime"]
-        try:
-            self._deconfigure()
-        except Exception as error:
-            pass
-
-        # Note: As dada keys are hexidecimal, they can't start with any letter later
-        # than "f" in the alphabet. To protect against "cannot parse key" type errors
-        # we prefix the dada key name with the letter "f"
-        # Note: DADA keys have a tendency to clash, looking for a workaround now
-        log.debug("Creating dada buffer [key: {0}]".format(self._dada_key))
-        self._docker.run("psr-capture","dada_db -k {0} -n 8 -b 16000000".format(self._dada_key),
-            remove=True, ipc_mode="host")
-
-    def _start(self):
         self._set_watchdog(self._docker.get_name("dbnull"),True)
         self._set_watchdog(self._docker.get_name("junkdb"),False)
         self._set_watchdog(self._docker.get_name("dbmonitor"),True)
         self._docker.run("psr-capture", "dada_dbnull -k {0}".format(self._dada_key),
             detach=True, name="dbnull", ipc_mode="host")
-        print "psr-capture", "dada_junkdb -k {0} -r 64 -t {1} -g {2}".format(self._dada_key,self._duration,self._header_file)
         self._docker.run("psr-capture", "dada_junkdb -k {0} -r 64 -t {1} -g {2}".format(
-            self._dada_key,self._duration,self._header_file),
+            self._dada_key,self._duration,dada_header_file.name),
             detach=True, volumes=self._volumes, name="junkdb", ipc_mode="host")
         self._docker.run("psr-capture", "dada_dbmonitor -k {0}".format(self._dada_key),
             detach=True, name="dbmonitor", ipc_mode="host")
+
+        # For observations that require firware triggers
+        # the loop that waits for the UDPDB trigger should go here
 
     def _stop(self):
         for name in ["dbnull","junkdb","dbmonitor"]:

@@ -165,23 +165,23 @@ class UniversalBackendNode(AsyncDeviceServer):
         raise AsyncReply
 
     @coroutine
-    def _send_to_all(self,cmd,req):
+    def _send_to_all(self,cmd,req,*args,**kwargs):
         futures = {}
         for name,client in self._pipeline_clients.items():
-            futures[name] = client.req[cmd]()
+            futures[name] = client.req[cmd](*args,**kwargs)
         for name,future in futures.items():
             response = yield future
             if response.reply.reply_ok():
-                req.inform("Pipeline '{0}' configured".format(name))
+                req.inform("Pipeline '{0}' '{1}' command success".format(name,cmd))
             else:
-                req.inform("Pipeline '{0}' failed to configure [error: {1}]".format(name,str(response.reply)))
+                req.inform("Pipeline '{0}' '{1}' command failure [error: {2}]".format(name,cmd,str(response.reply)))
         req.reply("ok","{0} command passed to all pipelines".format(cmd))
 
-    @request()
+    @request(Str())
     @return_reply(Str())
-    def request_start(self, req):
+    def request_start(self, req, sensors):
         """start"""
-        self.ioloop.add_callback(lambda: self._send_to_all("start",req))
+        self.ioloop.add_callback(lambda: self._send_to_all("start",req,sensors))
         raise AsyncReply
 
     @request()

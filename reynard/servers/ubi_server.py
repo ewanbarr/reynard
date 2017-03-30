@@ -82,10 +82,10 @@ class UniversalBackendInterface(AsyncDeviceServer):
         raise AsyncReply
 
     @coroutine
-    def _all_nodes_request(self,req,cmd):
+    def _all_nodes_request(self,req,cmd,*args,**kwargs):
         futures = {}
         for name,client in self._nodes.items():
-            futures[name] = client.req[cmd](timeout=20.0)
+            futures[name] = client.req[cmd](*args,**kwargs)
         for name,future in futures.items():
             response = yield future
             if not response.reply.reply_ok():
@@ -95,25 +95,25 @@ class UniversalBackendInterface(AsyncDeviceServer):
                 return
         req.reply("ok","{0} request complete".format(cmd))
 
-    @request()
+    @request(Str())
     @return_reply(Str())
-    def request_start(self, req):
+    def request_start(self, req, sensors):
         """start"""
-        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"start"))
+        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"start",sensors,timeout=20.0))
         raise AsyncReply
 
     @request()
     @return_reply(Str())
     def request_stop(self, req):
         """stop"""
-        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"stop"))
+        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"stop",timeout=20.0))
         raise AsyncReply
 
     @request()
     @return_reply(Str())
     def request_deconfigure(self, req):
         """deconfig"""
-        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"deconfigure"))
+        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"deconfigure",timeout=20.0))
         raise AsyncReply
 
     @request(Str(),Str(),Int())
