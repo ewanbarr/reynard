@@ -7,7 +7,7 @@ services:
     ports:
       - 5000:5000
     image: reynard
-    command: reynard_eff_status_server.py -p 5000
+    command: reynard_eff_status_server.py -p 5000 
   effcam-server:
     build: .
     container_name: effcam-server
@@ -34,6 +34,9 @@ services:
     network_mode: host
     ports:
       - 5004:5004
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/:/tmp/
     image: reynard
     command: reynard_ubn_server.py --port 5004 --log_level DEBUG
   ubn-server-1:
@@ -42,13 +45,20 @@ services:
     network_mode: host
     ports:
       - 5005:5005
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/:/tmp/
     image: reynard
     command: reynard_ubn_server.py --port 5005 --log_level DEBUG
   ubn-server-2:
     build: .
     container_name: ubn-server-2
     network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/:/tmp/
     ports:
-      - 5006:5006
+      - 5007:5007
     image: reynard
-    command: reynard_ubn_server.py --port 5006 --log_level DEBUG
+    command: reynard_ubn_server.py --port 5007 --log_level DEBUG
+    

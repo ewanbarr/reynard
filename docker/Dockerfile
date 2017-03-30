@@ -2,7 +2,8 @@ FROM ubuntu:16.04
 
 ENV DEBIAN_FRONTEND noninteractive
 
-RUN apt-get update -y && \
+RUN echo 'deb http://us.archive.ubuntu.com/ubuntu trusty main multiverse' >> /etc/apt/sources.list && \
+    apt-get update -y && \
     apt-get install -y --no-install-recommends \
     git \
     gcc \
@@ -10,7 +11,8 @@ RUN apt-get update -y && \
     ca-certificates \
     python2.7 \
     python2.7-dev \
-    python-setuptools && \
+    python-setuptools \
+    docker.io && \ 
     apt-get clean && \
     rm -rf /var/lib/apt/lists && \
 
@@ -31,7 +33,7 @@ RUN apt-get update -y && \
     git checkout tags/v0.6.1 && \
     python setup.py install
 
-ENV ARSE 1
+ENV ARSE 2
 
 # Reynard-dev
 RUN cd soft && \
@@ -41,3 +43,4 @@ RUN cd soft && \
     python setup.py install
 
 ENV PATH ${PATH}:/usr/local/bin
+ENV REYNARD_CONFIG /soft/reynard/config/
