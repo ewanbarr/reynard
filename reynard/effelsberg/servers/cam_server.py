@@ -348,7 +348,7 @@ class EffController(object):
             try:
                 yield self.configure_nodes()
             except Exception as error:
-                log.exception(str(error))
+                log.error(str(error))
                 yield self.stop()
                 return
             print "Post request"

@@ -4,7 +4,8 @@ import warnings
 VAR_TYPES = {
     int: tk.IntVar,
     float: tk.DoubleVar,
-    str: tk.StringVar
+    str: tk.StringVar,
+    bool: tk.IntVar
     }
 
 class ParameterController(tk.Frame):
@@ -44,7 +45,7 @@ class ParameterController(tk.Frame):
         return self._var.get()
 
     def set(self,value):
-        if self.validator(value):
+        if self.validator(str(value),str(self._var.get())):
             self._var.set(self.value_type(value))
 
 

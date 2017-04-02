@@ -1,0 +1,55 @@
+{
+    "backend":"eff-universal-v1.0",
+    "nodes": [
+    {% for node in nodes%}
+    {
+        "ip": "{{node.ip}}",
+        "port": {{node.port}},
+        "pipelines":
+        [
+            {
+                "name":"pipeline-0",
+                "pipeline_name":"DspsrPipeline",
+                "config":
+                {
+                    "dada_junkdb_params":
+                    {
+                        "image":"psr-capture",
+                        "args":"-r 64 -t 100"
+                    },
+                    "dspsr_params":
+                    {
+                        "image":"dspsr",
+                        "args":"-r -F 16:D -fft-bench -minram 256",
+                    },
+                    "dada_db_params":
+                    {
+                        "image":"psr-capture",
+                        "args":"-n 8 -b 16000000",
+                        "key":"dada"
+                    },
+                    "dada_dbmonitor_params":
+                    {
+                        "image":"psr-capture",
+                        "args":""
+                    },
+                    "dada_header_params":
+                    {
+                        "filesize":2500000000,
+                        "telescope":"Effelsberg",
+                        "instrument":"eff-universal-v1.0",
+                        "bandwidth":16,
+                        "tsamp":0.0625,
+                        "nbit":8,
+                        "ndim":2,
+                        "npol":2,
+                        "nchan":1
+                    }
+                }
+            }
+        ]
+    }
+    {% if not loop.last %},{% endif %}
+    {% endfor %}
+    ]
+}

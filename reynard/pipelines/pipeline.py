@@ -221,6 +221,7 @@ class DockerHelper(object):
         self._salt = "_{0}".format(binascii.hexlify(os.urandom(16)))
 
     def run(self, *args, **kwargs):
+        log.debug("Running Docker containers with args: {0}, {1}".format(args,kwargs))
         if kwargs.has_key("name"):
             kwargs["name"] = kwargs["name"] + self._salt
         try:
@@ -234,7 +235,7 @@ class DockerHelper(object):
             kwargs.update(nvidia_config())
         except Exception as error:
             raise PipelineError("Error retrieving Nvidia configuration [error: {0}]".format(str(error)))
-        return _run_container(*args,**kwargs)
+        return self.run(*args,**kwargs)
 
     def get(self, name):
         return self._client.containers.get(name + self._salt)

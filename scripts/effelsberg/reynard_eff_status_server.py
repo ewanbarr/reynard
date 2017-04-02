@@ -30,12 +30,8 @@ if __name__ == "__main__":
     logging.basicConfig(format=FORMAT)
     logger.setLevel(opts.log_level.upper())
     ioloop = tornado.ioloop.IOLoop.current()
-    if opts.dummy:
-        log.info("Starting DummyJsonStatusServer instance")
-        server = DummyJsonStatusServer("localhost",opts.port)
-    else:
-        log.info("Starting JsonStatusServer instance")
-        server = JsonStatusServer("localhost",opts.port)
+    log.info("Starting JsonStatusServer instance")
+    server = JsonStatusServer("localhost",opts.port,dummy=opts.dummy)
     signal.signal(signal.SIGINT, lambda sig, frame: ioloop.add_callback_from_signal(
         on_shutdown, ioloop, server))
     def start_and_display():

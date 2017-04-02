@@ -107,7 +107,9 @@ class UniversalBackendInterface(AsyncDeviceServer):
                 log.error(msg)
                 req.reply("fail",msg)
                 return
-        req.reply("ok","{0} request complete".format(cmd))
+        msg = "{0} request complete".format(cmd)
+        log.debug(msg)
+        req.reply("ok",msg)
 
     @request(Str())
     @return_reply(Str())

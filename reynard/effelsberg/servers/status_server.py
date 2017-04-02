@@ -22,9 +22,6 @@ TYPE_CONVERTER = {
     "bool":int
 }
 
-#TELESCOPE_STATUS_URL = "http://pulsarix/info/telescopeStatus.xml"
-TELESCOPE_STATUS_URL = "http://localhost:30005/info/telescopeStatus.xml"
-
 JSON_STATUS_MCAST_GROUP = '224.168.2.132'
 JSON_STATUS_PORT = 1602
 
@@ -36,76 +33,6 @@ STATUS_MAP = {
     "ok":1, # Sensor.STATUSES 'nominal'
     "warn":2 # Sensor.STATUSES 'warn'
 }
-
-NON_ASCII_MATCH = re.compile("[^a-zA-Z\d\s.]")
-
-def get_status_xml(url=TELESCOPE_STATUS_URL):
-    response = requests.get(url)
-    return etree.fromstring(response.content)
-
-def parse_element(element):
-    name = element.find("Name").text.encode("utf-8")
-    value =  element.find("Value").text.encode("utf-8")
-    value = NON_ASCII_MATCH.sub("",value)
-    status = element.find("Status")
-    if status is not None:
-        status_val = STATUS_MAP[status.text.encode("utf-8")]
-    else:
-        status_val = Sensor.UNKNOWN
-    return name,value,status_val
-
-
-class StatusServer(AsyncDeviceServer):
-    VERSION_INFO = ("reynard-eff-statusserver-api",0,1)
-    BUILD_INFO = ("reynard-eff-statusserver-implementation",0,1,"rc1")
-
-    def __init__(self, server_host, server_port, status_url=TELESCOPE_STATUS_URL):
-        self._url = status_url
-        self._timestamp = None
-        self._xml_sensors = {}
-        self._monitor = None
-        super(StatusServer,self).__init__(server_host, server_port)
-
-    @coroutine
-    def _update_sensors(self):
-        log.debug("Updating sensor values")
-        try:
-            tree = get_status_xml(self._url)
-            for name,sensor in self._xml_sensors.items():
-                element = tree.xpath("/TelescopeStatus/TelStat[Name/text()='{0}']".format(name))
-                if not element:
-                    log.warning("Could not retrieve telescope status for parameter '{0}'".format(name))
-                    continue
-                name,value,status = parse_element(element[0])
-                log.debug("Setting sensor '{name}' to value '{value}' and status '{status}'".format(
-                    name=name,value=value,status=status))
-                sensor.set(time.time(),status,value)
-        except Exception as error:
-            log.exception("Error on sensor update")
-
-    def start(self):
-        """start the server"""
-        super(StatusServer,self).start()
-        self._monitor = PeriodicCallback(self._update_sensors, 1000, io_loop=self.ioloop)
-        self._monitor.start()
-
-    def setup_sensors(self):
-        """Set up basic monitoring sensors.
-
-        Note: These are primarily for testing and
-              will be replaced in the final build.
-        """
-        tree = get_status_xml(self._url)
-        elements = tree.xpath("/TelescopeStatus/TelStat")
-        for element in elements:
-            name,value,status = parse_element(element)
-            lower_name = name.lower()
-            sensor = Sensor.string("{0}".format(lower_name),
-                description = "Value of {0}".format(name),
-                default = value,
-                initial_status=status)
-            self._xml_sensors[name] = sensor
-            self.add_sensor(sensor)
 
 class StatusCatcherThread(Thread):
     def __init__(self, mcast_group=JSON_STATUS_MCAST_GROUP, mcast_port=JSON_STATUS_PORT):
@@ -186,11 +113,16 @@ class JsonStatusServer(AsyncDeviceServer):
     def __init__(self, server_host, server_port,
                  mcast_group=JSON_STATUS_MCAST_GROUP,
                  mcast_port=JSON_STATUS_PORT,
-                 parser=EFF_JSON_CONFIG):
+                 parser=EFF_JSON_CONFIG,
+                 dummy=False):
         self._mcast_group = mcast_group
         self._mcast_port = mcast_port
         self._parser = parser
-        self._catcher_thread = StatusCatcherThread()
+        self._dummy = dummy
+        if not dummy:
+            self._catcher_thread = StatusCatcherThread()
+        else:
+            self._catcher_thread = None
         self._monitor = None
         self._updaters = {}
         self._controlled = set()
@@ -212,38 +144,48 @@ class JsonStatusServer(AsyncDeviceServer):
     def start(self):
         """start the server"""
         super(JsonStatusServer,self).start()
-        self._catcher_thread.start()
-        self._monitor = PeriodicCallback(self._update_sensors,1000,io_loop=self.ioloop)
-        self._monitor.start()
+        if not self._dummy:
+            self._catcher_thread.start()
+            self._monitor = PeriodicCallback(self._update_sensors,1000,io_loop=self.ioloop)
+            self._monitor.start()
 
     def stop(self):
         """stop the server"""
-        if self._monitor:
-            self._monitor.stop()
-        self._catcher_thread.stop()
+        if not self._dummy:
+            if self._monitor:
+                self._monitor.stop()
+            self._catcher_thread.stop()
         return super(JsonStatusServer,self).stop()
 
     @request()
     @return_reply(Str())
     def request_xml(self,req):
         """request an XML version of the status message"""
+        def make_elem(parent,name,text):
+            child = etree.Element(name)
+            child.text = text
+            parent.append(child)
+
         @coroutine
         def convert():
-            def update(a,b,key):
-                if b.has_key(key):
-                    a[key] = b[key]
-            data = self._catcher_thread.data
-            if data is None:
-                req.reply("fail","Data not yet initialised by catcher thread")
+            try:
+                root= etree.Element("TelescopeStatus",
+                 attrib={
+                 "timestamp":str(time.time())
+                 })
+                for name,sensor in self._sensors.items():
+                    child = etree.Element("TelStat")
+                    make_elem(child,"Name",name)
+                    make_elem(child,"Value",str(sensor.value()))
+                    make_elem(child,"Status",str(sensor.status()))
+                    make_elem(child,"Type",self._parser[name]["type"])
+                    if self._parser[name].has_key("units"):
+                        make_elem(child,"Units",self._parser[name]["units"])
+                    root.append(child)
+            except Exception as error:
+                req.reply("ok",str(error))
             else:
-                out = {}
-                for name,params in self._parser.items():
-                    out[name] = {}
-                    for key in ["type","units","description"]:
-                        update(out[name],params,key)
-                    out[name]["value"] = params["updater"](data)
-                as_json = json.dumps(out)
-                req.reply("ok",escape_string(as_json))
+                req.reply("ok",etree.tostring(root))
         self.ioloop.add_callback(convert)
         raise AsyncReply
 
@@ -304,9 +246,6 @@ class JsonStatusServer(AsyncDeviceServer):
 
     def setup_sensors(self):
         """Set up basic monitoring sensors.
-
-        Note: These are primarily for testing and
-              will be replaced in the final build.
         """
         for name,params in self._parser.items():
             if params["type"] == "float":
