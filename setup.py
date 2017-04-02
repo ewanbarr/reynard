@@ -21,7 +21,8 @@ setup(name='reynard',
              'scripts/reynard_ubi_server.py',
              'scripts/reynard_ubn_server.py',
              'scripts/effelsberg/reynard_effcam_server.py',
-             'scripts/effelsberg/reynard_eff_status_server.py'],
+             'scripts/effelsberg/reynard_eff_status_server.py',
+             'scripts/effelsberg/reynard_eff_status_controller.py'],
     package_data = {
         "reynard":['config/*']
     },
