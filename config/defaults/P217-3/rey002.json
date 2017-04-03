@@ -20,7 +20,7 @@
                     "dspsr_params":
                     {
                         "image":"dspsr",
-                        "args":"-r -F 16:D -fft-bench -minram 256",
+                        "args":"-r -F 16:D -fft-bench -minram 256"
                     },
                     "dada_db_params":
                     {
