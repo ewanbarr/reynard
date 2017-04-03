@@ -4,7 +4,7 @@ import tornado
 import logging
 import json
 from optparse import OptionParser
-from reynard.effelsberg.servers import JsonStatusServer, DummyJsonStatusServer
+from reynard.effelsberg.servers import JsonStatusServer
 
 log = logging.getLogger("reynard.eff_status_server")
 
