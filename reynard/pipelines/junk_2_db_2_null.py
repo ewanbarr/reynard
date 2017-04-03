@@ -67,6 +67,8 @@ class Junk2Db2Null(Pipeline):
         self._set_watchdog(self._docker.get_name("dbnull"),True)
         self._set_watchdog(self._docker.get_name("junkdb"),False)
         self._set_watchdog(self._docker.get_name("dbmonitor"),True)
+
+        # The start up time can be improved here by pre-createing these containers
         self._docker.run("psr-capture", "dada_dbnull -k {0}".format(self._dada_key),
             detach=True, name="dbnull", ipc_mode="host")
         self._docker.run("psr-capture", "dada_junkdb -k {0} -r 64 -t {1} -g {2}".format(
