@@ -16,7 +16,7 @@
                     {
                         "filesize":2500000000,
                         "telescope":"Effelsberg",
-                        "instrument":"eff-universal-v1.0",
+                        "instrument":"effpaf",
                         "bandwidth":16,
                         "tsamp":0.0625,
                         "nbit":8,
@@ -37,7 +37,7 @@
                     {
                         "filesize":2500000000,
                         "telescope":"Effelsberg",
-                        "instrument":"eff-universal-v1.0",
+                        "instrument":"effpaf",
                         "bandwidth":16,
                         "tsamp":0.0625,
                         "nbit":8,
