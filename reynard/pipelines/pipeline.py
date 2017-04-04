@@ -65,6 +65,16 @@ def nvidia_config(addr=NVIDA_DOCKER_PLUGIN_HOST):
     }
     return params
 
+def vma_config():
+    params = {
+    "devices": [
+        "/dev/infiniband/uverbs0",
+        "/dev/infiniband/uverbs1",
+        "/dev/infiniband/rdma_cm"
+        ]
+    }
+    return params
+
 class Watchdog(Thread):
     def __init__(self, name, standdown, callback, persistent=False):
         Thread.__init__(self)

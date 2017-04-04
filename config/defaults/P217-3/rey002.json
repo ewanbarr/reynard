@@ -19,8 +19,8 @@
                     },
                     "dspsr_params":
                     {
-                        "image":"dspsr",
-                        "args":"-r -F 16:D -fft-bench -minram 256"
+                        "image":"dspsr:cuda8.0",
+                        "args":"-r -F 16:D -fft-bench -cuda 0 -minram 256"
                     },
                     "dada_db_params":
                     {
