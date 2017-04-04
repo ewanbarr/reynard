@@ -31,7 +31,6 @@ class Junk2Db2Null(Pipeline):
     def __init__(self):
         super(Junk2Db2Null,self).__init__()
         self._volumes = ["/tmp/:/tmp/"]
-        self._docker = DockerHelper()
         self._dada_key = None
         self._duration = None
         self._config = None
@@ -64,9 +63,9 @@ class Junk2Db2Null(Pipeline):
         dada_key_file.write(make_dada_key_string(self._dada_key))
         dada_header_file.close()
         dada_key_file.close()
-        self._set_watchdog(self._docker.get_name("dbnull"),True)
-        self._set_watchdog(self._docker.get_name("junkdb"),False)
-        self._set_watchdog(self._docker.get_name("dbmonitor"),True)
+        self._set_watchdog("dbnull",persistent=True)
+        self._set_watchdog("junkdb",callback=self.stop)
+        self._set_watchdog("dbmonitor",persistent=True)
 
         # The start up time can be improved here by pre-createing these containers
         self._docker.run("psr-capture", "dada_dbnull -k {0}".format(self._dada_key),

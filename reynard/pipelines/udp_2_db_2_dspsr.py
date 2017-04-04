@@ -28,7 +28,6 @@ class Udp2Db2Dspsr(Pipeline):
     def __init__(self):
         super(Udp2Db2Dspsr,self).__init__()
         self._volumes = ["/tmp/:/tmp/"]
-        self._docker = DockerHelper()
         self._dada_key = None
         self._config = None
 
@@ -83,9 +82,9 @@ class Udp2Db2Dspsr(Pipeline):
         dada_header_file.close()
         dada_key_file.close()
 
-        self._set_watchdog(self._docker.get_name("dspsr"),False)
-        self._set_watchdog(self._docker.get_name("junkdb"),False)
-        self._set_watchdog(self._docker.get_name("dbmonitor"),True)
+        self._set_watchdog("dspsr", callback=self.stop)
+        self._set_watchdog("junkdb")
+        self._set_watchdog("dbmonitor",persistent=True)
 
         ulimits = [{
             "Name":"memlock",

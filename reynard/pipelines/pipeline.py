@@ -78,7 +78,7 @@ def vma_config():
     return params
 
 class Watchdog(Thread):
-    def __init__(self, name, standdown, callback, persistent=False):
+    def __init__(self, name, standdown, callback):
         Thread.__init__(self)
         self._client = docker.from_env()
         self._name = name
@@ -130,20 +130,22 @@ class Pipeline(Stateful):
         self._watchdogs = []
         self._standdown = Event()
         self._lock = Lock()
+        self._docker = DockerHelper()
         super(Pipeline,self).__init__("idle")
 
-    def _set_watchdog(self, name, persistent=False):
-        def callback(exit_code):
-            log.info("Watchdog recieved exit code {1} from '{0}'".format(name,exit_code))
+    def _set_watchdog(self, name, callback=None, persistent=False):
+        def internal_callback(exit_code):
+            log.debug("Watchdog recieved exit code {1} from '{0}'".format(name,exit_code))
             if persistent or exit_code != 0:
-                log.error("Watchdog on container {0} saw unexpected exit [code: {1}]".format(
-                    name,exit_code))
+                log.error("Watchdog on container {0} saw unexpected exit [code: {1}]".format(name,exit_code))
+                container = self._docker.get(name)
+                log.error("Container logs: {0}".format(container.logs()))
                 self.stop(failed=True)
             else:
                 log.debug("Watchdog on container {0} triggered".format(name))
-                self.stop()
-        guard = Watchdog(name,self._standdown,callback)
-        guard.start()
+                if callback is not None:
+                    callback()
+        guard = Watchdog(self._docker.get_name(name),self._standdown,internal_callback)
         self._watchdogs.append(guard)
 
     def _call(self,next_state,func,*args,**kwargs):
