@@ -139,7 +139,7 @@ class Pipeline(Stateful):
             if persistent or exit_code != 0:
                 log.error("Watchdog on container {0} saw unexpected exit [code: {1}]".format(name,exit_code))
                 container = self._docker.get(name)
-                log.error("Container logs: {0}".format(container.logs()))
+                log.error("Container logs:\n{0}".format(container.logs()))
                 self.stop(failed=True)
             else:
                 log.debug("Watchdog on container {0} triggered".format(name))

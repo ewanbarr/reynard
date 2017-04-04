@@ -304,6 +304,7 @@ class EffController(object):
 
     @coroutine
     def start_nodes(self):
+        log.debug("Requesting backend start")
         json_request = yield self.cam_server._status_server.req.json()
         if not json_request.reply.reply_ok():
             msg = "Error on JSON request to status server: {0}".format(str(json_request.messages))
@@ -312,21 +313,26 @@ class EffController(object):
         response = yield self._backend.req.start(status_string,timeout=20)
         if not response.reply.reply_ok():
             raise Exception("Error on backend start request: {0}".format(response.messages))
+        log.debug("Backend start successful")
         log.debug("[DUMMY] Sending 1 PPS trigger to firmware")
 
     @coroutine
     def stop_nodes(self):
         # wait until backend is
+        log.debug("Requesting backend stop")
         response = yield self._backend.req.stop(timeout=20)
         if not response.reply.reply_ok():
             raise Exception("Error on backend stop request: {0}".format(response.messages))
+        log.debug("Backend stop success")
 
     @coroutine
     def deconfigure_nodes(self):
         # wait until backend is
+        log.debug("Requesting backend deconfigure")
         response = yield self._backend.req.deconfigure(timeout=20)
         if not response.reply.reply_ok():
             raise Exception("Error on backend deconfigure request: {0}".format(response.messages))
+        log.debug("Backend deconfigure success")
 
     @coroutine
     def scan_handler(self,rt,t,status,value):
