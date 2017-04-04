@@ -150,7 +150,7 @@ class UniversalBackendNode(AsyncDeviceServer):
             futures = {}
             for name,client in self._pipeline_clients.items():
                 futures[name] = client.req.deconfigure()
-            #for name,client in self._pipeline_clients.items():
+            for name,client in self._pipeline_clients.items():
                 response = yield futures[name]
                 if not response.reply.reply_ok():
                     req.inform("Warning: failure on deconfigure of pipeline '{0}': {1}".format(name,str(response.messages)))
