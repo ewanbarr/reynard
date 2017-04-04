@@ -130,7 +130,7 @@ class UniversalBackendNode(AsyncDeviceServer):
                 if configure_response.reply.reply_ok():
                     req.inform("Pipeline '{0}' configured".format(name))
                 else:
-                    req.reply("fail","Configuration of pipeline '{0}' failed with message: {1}",format(name,configure_response.messages))
+                    req.reply("fail","Configuration of pipeline '{0}' failed with message: {1}",format(name,str(configure_response.messages)))
                     return
             req.reply("ok","All pipelines created and configured")
             self._active.set_value(True)
@@ -153,7 +153,7 @@ class UniversalBackendNode(AsyncDeviceServer):
             #for name,client in self._pipeline_clients.items():
                 response = yield futures[name]
                 if not response.reply.reply_ok():
-                    req.inform("Warning: failure on deconfigure of pipeline '{0}': {1}".format(name,response.messages))
+                    req.inform("Warning: failure on deconfigure of pipeline '{0}': {1}".format(name,str(response.messages)))
                 client.stop()
             for name,server in self._pipeline_servers.items():
                 yield server.stop()

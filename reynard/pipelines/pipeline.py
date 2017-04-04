@@ -232,7 +232,7 @@ class DockerHelper(object):
         self._client = docker.from_env()
         self._salt = "_{0}".format(binascii.hexlify(os.urandom(16)))
 
-    def _update_from_key(key,params,func):
+    def _update_from_key(self,key,params,func):
         if not params.has_key(key):
             return
         if not params[key]:
