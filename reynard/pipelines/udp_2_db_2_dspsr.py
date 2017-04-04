@@ -89,8 +89,8 @@ class Udp2Db2Dspsr(Pipeline):
 
         ulimits = [{
             "Name":"memlock",
-            "Hard":"-1",
-            "Soft":"-1"
+            "Hard":-1,
+            "Soft":-1
         }]
 
         cmd = "dspsr {args} -N {source_name} {keyfile}".format(
