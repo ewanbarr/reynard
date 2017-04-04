@@ -209,6 +209,14 @@ class JsonStatusServer(AsyncDeviceServer):
             return ("ok","{0} under user control".format(name))
 
     @request()
+    @return_reply(Str())
+    def request_sensor_control_all(self, req):
+        """take control of all sensors value"""
+        for name,sensor in self._sensors.items():
+            self._controlled.add(name)
+        return ("ok","{0} sensors under user control".format(len(self._controlled)))
+
+    @request()
     @return_reply(Int())
     def request_sensor_list_controlled(self, req):
         """List all controlled sensors"""
@@ -226,6 +234,13 @@ class JsonStatusServer(AsyncDeviceServer):
         else:
             self._controlled.remove(name)
             return ("ok","{0} released from user control".format(name))
+
+    @request()
+    @return_reply(Str())
+    def request_sensor_release_all(self, req):
+        """take control of all sensors value"""
+        self._controlled = set()
+        return ("ok","All sensors released")
 
     @request(Str(),Str())
     @return_reply(Str())
