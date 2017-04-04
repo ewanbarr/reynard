@@ -243,7 +243,7 @@ class DockerHelper(object):
             if not params.has_key(update_key):
                 params[update_key] = update_item
             elif isinstance(params[update_key],list):
-                params[update_key].extend(items)
+                params[update_key].extend(update_item)
             else:
                 raise Exception("Key clash on parameter update: {0}".format(update_key))
 
