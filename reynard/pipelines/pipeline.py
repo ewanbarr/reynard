@@ -6,6 +6,8 @@ import os
 import binascii
 import docker
 import weakref
+import urllib2
+import json
 from threading import Thread, Event, Lock
 
 log = logging.getLogger("reynard.pipelines")
