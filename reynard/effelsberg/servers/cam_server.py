@@ -355,6 +355,7 @@ class EffController(object):
             except (InvalidReceiver, InvalidConfiguration) as error:
                 log.warning(str(error))
                 log.warning("Skipping scan")
+                return
             except Exception as error:
                 log.error(str(error))
                 yield self.stop()
