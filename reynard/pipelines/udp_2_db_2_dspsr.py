@@ -115,7 +115,7 @@ class Udp2Db2Dspsr(Pipeline):
             args = self._config["dada_dbmonitor_params"]["args"])
         log.debug("Running command: {0}".format(cmd))
         self._docker.run(self._config["dada_dbmonitor_params"]["image"], cmd,
-            detach=True, name="dbmonitor", ipc_mode="host", ulimits=)
+            detach=True, name="dbmonitor", ipc_mode="host")
 
     def _stop(self):
         for name in ["dspsr","junkdb","dbmonitor"]:
