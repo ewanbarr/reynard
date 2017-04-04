@@ -83,7 +83,7 @@ class Udp2Db2Dspsr(Pipeline):
         dada_header_file.close()
         dada_key_file.close()
 
-        self._set_watchdog(self._docker.get_name("dspsr"),True)
+        self._set_watchdog(self._docker.get_name("dspsr"),False)
         self._set_watchdog(self._docker.get_name("junkdb"),False)
         self._set_watchdog(self._docker.get_name("dbmonitor"),True)
 
