@@ -98,9 +98,10 @@ class Udp2Db2Dspsr(Pipeline):
             source_name = source_name,
             keyfile = dada_key_file.name)
         log.debug("Running command: {0}".format(cmd))
-        self._docker.run_nvidia(self._config["dspsr_params"]["image"], cmd,
+        self._docker.run(self._config["dspsr_params"]["image"], cmd,
             detach=True, name="dspsr", ipc_mode="host",
-            volumes=self._volumes, ulimits=ulimits)
+            volumes=self._volumes, ulimits=ulimits,
+            requires_nvidia=True)
 
         cmd = "dada_junkdb -k {key} {args} -g {headerfile}".format(
             key = self._dada_key,

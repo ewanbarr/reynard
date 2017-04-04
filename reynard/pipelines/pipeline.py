@@ -232,7 +232,24 @@ class DockerHelper(object):
         self._client = docker.from_env()
         self._salt = "_{0}".format(binascii.hexlify(os.urandom(16)))
 
+    def _update_from_key(key,params,func):
+        if not params.has_key(key):
+            return
+        if not params[key]:
+            return
+        del params[key]
+        updates = func()
+        for update_key,update_item in updates.items():
+            if not params.has_key(update_key):
+                params[update_key] = update_item
+            elif isinstance(params[update_key],list):
+                params[update_key].extend(items)
+            else:
+                raise Exception("Key clash on parameter update: {0}".format(update_key))
+
     def run(self, *args, **kwargs):
+        self._update_from_key('requires_nvidia',kwargs,nvidia_config)
+        self._update_from_key('requires_vma',kwargs,vma_config)
         log.debug("Running Docker containers with args: {0}, {1}".format(args,kwargs))
         if kwargs.has_key("name"):
             kwargs["name"] = kwargs["name"] + self._salt
@@ -241,13 +258,6 @@ class DockerHelper(object):
         except Exception as error:
             raise PipelineError("Error starting container args='{0}' and kwargs='{1}' [error: {2}]".format(
                 repr(args),repr(kwargs),str(error)))
-
-    def run_nvidia(self, *args, **kwargs):
-        try:
-            kwargs.update(nvidia_config())
-        except Exception as error:
-            raise PipelineError("Error retrieving Nvidia configuration [error: {0}]".format(str(error)))
-        return self.run(*args,**kwargs)
 
     def get(self, name):
         return self._client.containers.get(name + self._salt)
