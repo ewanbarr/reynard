@@ -351,7 +351,7 @@ class EffController(object):
                 log.warning(str(error))
             try:
                 yield self.configure_nodes()
-            except InvalidReceiver,InvalidConfiguration as error:
+            except (InvalidReceiver, InvalidConfiguration) as error:
                 log.warning(str(error))
                 log.warning("Skipping scan")
             except Exception as error:
