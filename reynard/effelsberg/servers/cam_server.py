@@ -12,7 +12,8 @@ from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete, Address, Struct
 from katcp.resource_client import KATCPClientResource
 from reynard.utils import doc_inherit, escape_string, pack_dict, unpack_dict
-from reynard.effelsberg import InvalidConfiguration, config as config_manager
+from reynard.effelsberg import config as config_manager
+from reynard.effelsberg.config import InvalidConfiguration
 from reynard.receiver import get_receiver, InvalidReceiver
 
 log = logging.getLogger('reynard.effelsberg.cam_server')
