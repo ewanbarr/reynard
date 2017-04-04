@@ -146,6 +146,7 @@ class Pipeline(Stateful):
                 if callback is not None:
                     callback()
         guard = Watchdog(self._docker.get_name(name),self._standdown,internal_callback)
+        guard.start()
         self._watchdogs.append(guard)
 
     def _call(self,next_state,func,*args,**kwargs):
