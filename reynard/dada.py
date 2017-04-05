@@ -51,50 +51,45 @@ DSB          1
 """
 
 DADA_DEFAULTS = {
-    "obs_id":"unset",
-    "filesize":2500000000,
-    "mjd":5555.55555,
-    "source":"B1937+21",
-    "ra":"00:00:00.00",
-    "dec":"00:00:00.00",
-    "telescope":"Effelsberg",
-    "instrument":"eff-universal-v1.0",
-    "receiver_name":"P217-3",
-    "frequency_mhz":1260,
-    "bandwidth":16,
-    "tsamp":0.0625,
-    "nbit":8,
-    "ndim":2,
-    "npol":2,
-    "nchan":1
+    "obs_id": "unset",
+    "filesize": 2500000000,
+    "mjd": 5555.55555,
+    "source": "B1937+21",
+    "ra": "00:00:00.00",
+    "dec": "00:00:00.00",
+    "telescope": "Effelsberg",
+    "instrument": "eff-universal-v1.0",
+    "receiver_name": "P217-3",
+    "frequency_mhz": 1260,
+    "bandwidth": 16,
+    "tsamp": 0.0625,
+    "nbit": 8,
+    "ndim": 2,
+    "npol": 2,
+    "nchan": 1
 }
+
 
 def dada_keygen():
     return binascii.hexlify(os.urandom(8))
 
+
 def make_dada_key_string(key):
     return "DADA INFO:\nkey {0}".format(key)
 
+
 def dada_defaults():
     out = DADA_DEFAULTS.copy()
-    bytes_per_second = out["bandwidth"]*1e6 * out["nchan"] * out["ndim"] * out["npol"] * out["nbit"]/8
+    bytes_per_second = out["bandwidth"] * 1e6 * \
+        out["nchan"] * out["ndim"] * out["npol"] * out["nbit"] / 8
     out.update({
-    "bytes_per_second":bytes_per_second,
-    "utc_start":datetime.utcnow().strftime('%Y-%m-%d-%H:%M:%S.%f')
+        "bytes_per_second": bytes_per_second,
+        "utc_start": datetime.utcnow().strftime('%Y-%m-%d-%H:%M:%S.%f')
     })
     return out
+
 
 def render_dada_header(overrides):
     defaults = dada_defaults()
     defaults.update(overrides)
     return jinja2.Template(DADA_HEADER).render(**defaults)
-
-
-
-
-
-
-
-
-
-

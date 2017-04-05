@@ -11,6 +11,7 @@ class CreateToolTip(object):
     '''
     create a tooltip for a given widget
     '''
+
     def __init__(self, widget, text='widget info', delay=1000):
         self.widget = widget
         self.text = text
@@ -21,7 +22,7 @@ class CreateToolTip(object):
         self.widget.bind("<Leave>", self.cancel_enter)
 
     def delayed_enter(self, event=None):
-        self.__event = self.widget.after(self.delay,self.enter)
+        self.__event = self.widget.after(self.delay, self.enter)
 
     def cancel_enter(self, event=None):
         if self.__event is not None:
@@ -57,7 +58,7 @@ if __name__ == '__main__':
 
     btn1 = tk.Button(root, text="button 1")
     btn1.pack(padx=10, pady=5)
-    button1_ttp = CreateToolTip(btn1, "mouse is over button 1",delay=2000)
+    button1_ttp = CreateToolTip(btn1, "mouse is over button 1", delay=2000)
 
     btn2 = tk.Button(root, text="button 2")
     btn2.pack(padx=10, pady=5)

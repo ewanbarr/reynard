@@ -1,5 +1,4 @@
 {
-    "backend":"effpaf",
     "nodes": [
     {% for node in nodes%}
     {
@@ -12,10 +11,10 @@
                 "pipeline_name":"DspsrPipeline",
                 "config":
                 {
-                    "dada_junkdb_params":
+                    "udp2db_params":
                     {
-                        "image":"psr-capture",
-                        "args":"-r 64 -t 100"
+                        "image":"psr-capture:asterix",
+                        "args":"-p 18000"
                     },
                     "dspsr_params":
                     {
@@ -37,7 +36,7 @@
                     {
                         "filesize":2500000000,
                         "telescope":"Effelsberg",
-                        "instrument":"effpaf",
+                        "instrument":"asterix",
                         "bandwidth":16,
                         "tsamp":0.0625,
                         "nbit":8,

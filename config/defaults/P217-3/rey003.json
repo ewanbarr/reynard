@@ -1,0 +1,33 @@
+{
+    "backend":"effpaf",
+    "nodes": [
+    {% for node in nodes%}
+    {
+        "ip": "{{node.ip}}",
+        "port": {{node.port}},
+        "pipelines":
+        [
+            {
+                "name":"pipeline-0",
+                "pipeline_name":"PafPipeline",
+                "config":
+                {
+                    "params":
+                    [
+                        "IP {{node.eth2}}, {{node.eth4}}",
+                        "GPU_ID 0, 1",
+                        "SOURCE Arse",
+                        "TELESCOPE_ID 8",
+                        "RA XXX, YYY",
+                        "DEC XXX, YYY",
+                        "DM_START 0",
+                        "DM_END 1000"
+                    ]
+                }
+            }
+        ]
+    }
+    {% if not loop.last %},{% endif %}
+    {% endfor %}
+    ]
+}

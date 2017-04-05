@@ -1,27 +1,26 @@
 import logging
-import socket
-import json
-from tornado.gen import coroutine, Return
-from katcp import Sensor, AsyncDeviceServer, AsyncReply
+from tornado.gen import coroutine
+from katcp import AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete
 from katcp.resource_client import KATCPClientResource
 from katcp.ioloop_manager import with_relative_timeout
-from reynard.monitors import DiskMonitor,CpuMonitor,MemoryMonitor
-from reynard.utils import doc_inherit, decode_katcp_message, unpack_dict, pack_dict
+from reynard.utils import unpack_dict, pack_dict
 
 log = logging.getLogger("reynard.ubi_server")
+
 
 class UniversalBackendInterface(AsyncDeviceServer):
     """Katcp server for cluster head nodes.
 
     """
-    VERSION_INFO = ("reynard-ubi-api",0,1)
-    BUILD_INFO = ("reynard-ubi-implementation",0,1,"rc1")
-    DEVICE_STATUSES = ["ok","fail","degraded"]
+    VERSION_INFO = ("reynard-ubi-api", 0, 1)
+    BUILD_INFO = ("reynard-ubi-implementation", 0, 1, "rc1")
+    DEVICE_STATUSES = ["ok", "fail", "degraded"]
 
     def __init__(self, server_host, server_port):
         self._nodes = {}
-        super(UniversalBackendInterface,self).__init__(server_host, server_port)
+        super(UniversalBackendInterface, self).__init__(
+            server_host, server_port)
 
     def setup_sensors(self):
         """add sensors"""
@@ -34,30 +33,34 @@ class UniversalBackendInterface(AsyncDeviceServer):
         where the clients for suboridnates nodes will be
         set up.
         """
-        super(UniversalBackendInterface,self).start()
+        super(UniversalBackendInterface, self).start()
 
-    def _add_node(self,name,ip,port):
+    def _add_node(self, name, ip, port):
         """Add a named node."""
-        log.debug("Adding node '{0}' ({1}:{2})".format(name,ip,port))
+        log.debug("Adding node '{0}' ({1}:{2})".format(name, ip, port))
         if name in self._nodes.keys():
-            raise KeyError("Node already added with name '{name}'".format(name=name))
+            raise KeyError(
+                "Node already added with name '{name}'".format(
+                    name=name))
         client = KATCPClientResource(dict(
             name=name,
             address=(ip, port),
             controlled=True))
         client.start()
-        self._nodes[name]=client
+        self._nodes[name] = client
 
-    def _remove_node(self,name):
+    def _remove_node(self, name):
         """Remove a client by name."""
         log.debug("Removing node '{0}'".format(name))
         if name not in self._nodes.keys():
-            raise KeyError("No node exists with name '{name}'".format(name=name))
+            raise KeyError(
+                "No node exists with name '{name}'".format(
+                    name=name))
         self._nodes[name].stop()
         del self._nodes[name]
 
-    @request(Str(),Str())
-    @return_reply(Str(),Str())
+    @request(Str(), Str())
+    @return_reply(Str(), Str())
     def request_configure(self, req, config, sensors):
         """config"""
         @coroutine
@@ -66,81 +69,100 @@ class UniversalBackendInterface(AsyncDeviceServer):
             node_count = len(config["nodes"])
             configured = 0
             for node in config["nodes"]:
-                ip,port = node["ip"],node["port"]
-                log.debug("Searching for node at {0}:{1}".format(ip,port))
-                for name,client in self._nodes.items():
-                    if client.address == (ip,port):
-                        log.debug("Found node at {0}:{1} named {2}".format(ip,port,name))
-                        log.debug("Pipeline config for node: {0}".format(node["pipelines"]))
-                        req.inform("Configuring node '{0}' ({1}:{2})".format(name,ip,port))
-                        futures[name] = client.req.configure(pack_dict(node["pipelines"]),sensors,timeout=30)
+                ip, port = node["ip"], node["port"]
+                log.debug("Searching for node at {0}:{1}".format(ip, port))
+                for name, client in self._nodes.items():
+                    if client.address == (ip, port):
+                        log.debug(
+                            "Found node at {0}:{1} named {2}".format(
+                                ip, port, name))
+                        log.debug(
+                            "Pipeline config for node: {0}".format(
+                                node["pipelines"]))
+                        req.inform(
+                            "Configuring node '{0}' ({1}:{2})".format(
+                                name, ip, port))
+                        futures[name] = client.req.configure(
+                            pack_dict(node["pipelines"]),
+                            sensors, timeout=30)
                         break
                 else:
-                    msg = "No node found at {0}:{1}".format(ip,port)
+                    msg = "No node found at {0}:{1}".format(ip, port)
                     req.inform(msg)
                     log.warning(msg)
 
             for name, future in futures.items():
                 response = yield future
                 if not response.reply.reply_ok():
-                    req.inform("Configuration failure from node '{0}': {1}".format(name,str(response.messages)))
+                    req.inform(
+                        "Configuration failure from node '{0}': {1}".format(
+                            name, str(
+                                response.messages)))
                 else:
                     configured += 1
             if configured >= 1:
-                req.reply("ok","Configured {0} of {1} nodes".format(configured,node_count))
+                req.reply(
+                    "ok", "Configured {0} of {1} nodes".format(
+                        configured, node_count))
             else:
-                req.reply("fail","No nodes configured")
+                req.reply("fail", "No nodes configured")
         self.ioloop.add_callback(lambda: configure(unpack_dict(config)))
         raise AsyncReply
 
     @coroutine
-    def _all_nodes_request(self,req,cmd,*args,**kwargs):
+    def _all_nodes_request(self, req, cmd, *args, **kwargs):
         log.debug("Sending '{0}' request to all nodes".format(cmd))
         futures = {}
-        for name,client in self._nodes.items():
-            futures[name] = client.req[cmd](*args,**kwargs)
-        for name,future in futures.items():
+        for name, client in self._nodes.items():
+            futures[name] = client.req[cmd](*args, **kwargs)
+        for name, future in futures.items():
             response = yield future
             if not response.reply.reply_ok():
                 msg = "Failure on '{0}' request to node '{1}': {2}".format(
-                    cmd,name,str(response.messages))
+                    cmd, name, str(response.messages))
                 log.error(msg)
-                req.reply("fail",msg)
+                req.reply("fail", msg)
                 return
         msg = "{0} request complete".format(cmd)
         log.debug(msg)
-        req.reply("ok",msg)
+        req.reply("ok", msg)
 
     @request(Str())
     @return_reply(Str())
     def request_start(self, req, sensors):
         """start"""
-        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"start",sensors,timeout=20.0))
+        self.ioloop.add_callback(
+            lambda: self._all_nodes_request(
+                req, "start", sensors, timeout=20.0))
         raise AsyncReply
 
     @request()
     @return_reply(Str())
     def request_stop(self, req):
         """stop"""
-        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"stop",timeout=20.0))
+        self.ioloop.add_callback(
+            lambda: self._all_nodes_request(
+                req, "stop", timeout=20.0))
         raise AsyncReply
 
     @request()
     @return_reply(Str())
     def request_deconfigure(self, req):
         """deconfig"""
-        self.ioloop.add_callback(lambda: self._all_nodes_request(req,"deconfigure",timeout=20.0))
+        self.ioloop.add_callback(
+            lambda: self._all_nodes_request(
+                req, "deconfigure", timeout=20.0))
         raise AsyncReply
 
-    @request(Str(),Str(),Int())
+    @request(Str(), Str(), Int())
     @return_reply(Str())
     def request_node_add(self, req, name, ip, port):
         """Add a new node."""
         try:
-            self._add_node(name,ip,port)
-        except KeyError,e:
-            return ("fail",str(e))
-        return ("ok","added node")
+            self._add_node(name, ip, port)
+        except KeyError as e:
+            return ("fail", str(e))
+        return ("ok", "added node")
 
     @request(Str())
     @return_reply(Str())
@@ -148,19 +170,19 @@ class UniversalBackendInterface(AsyncDeviceServer):
         """Add a new node."""
         try:
             self._remove_node(name)
-        except KeyError,e:
-            return ("fail",str(e))
-        return ("ok","removed node")
+        except KeyError as e:
+            return ("fail", str(e))
+        return ("ok", "removed node")
 
     @request()
     @return_reply(Str())
     def request_node_list(self, req):
         """List all available nodes"""
         msg = [""]
-        for ii,(name,node) in enumerate(self._nodes.items()):
+        for ii, (name, node) in enumerate(self._nodes.items()):
             msg.append("{node.name} {node.address}".format(node=node))
         req.inform("\n\_\_\_\_".join(msg))
-        return ("ok","{count} nodes found".format(count=len(self._nodes)))
+        return ("ok", "{count} nodes found".format(count=len(self._nodes)))
 
     @request()
     @return_reply(Discrete(DEVICE_STATUSES))
@@ -176,33 +198,34 @@ class UniversalBackendInterface(AsyncDeviceServer):
         @coroutine
         def status_handler():
             futures = {}
-            for name,client in self._nodes.items():
+            for name, client in self._nodes.items():
                 future = client.req.device_status()
                 futures[name] = future
             statuses = {}
-            for name,future in futures.items():
-                with_relative_timeout(2,future)
+            for name, future in futures.items():
+                with_relative_timeout(2, future)
                 status = yield future
                 if not status:
-                    req.inform("Warning {name} status request failed: {msg}".format(
-                        name=name,msg=str(status)))
+                    req.inform(
+                        "Warning {name} status request failed: {msg}".format(
+                            name=name, msg=str(status)))
                 reply = status.reply
                 status_message = reply.arguments[1]
                 req.inform("Client {name} state: {msg}".format(
-                    name=name,msg=status_message))
+                    name=name, msg=status_message))
                 statuses[name] = reply.arguments[1] == "ok"
-            passes = [success for name,success in statuses.items()]
+            passes = [success for name, success in statuses.items()]
             if all(passes):
-                req.reply("ok","ok")
+                req.reply("ok", "ok")
             else:
                 # some policy for degradation needs to be determined based on
-                # overall instrument capability. Maybe fraction of beams x bandwidth?
-                fail_count = len(passes)-sum(passes)
+                # overall instrument capability. Maybe fraction of beams x
+                # bandwidth?
+                fail_count = len(passes) - sum(passes)
                 if fail_count > 1:
-                    req.reply("ok","fail")
+                    req.reply("ok", "fail")
                 else:
-                    req.reply("ok","degraded")
+                    req.reply("ok", "degraded")
 
         self.ioloop.add_callback(status_handler)
         raise AsyncReply
-

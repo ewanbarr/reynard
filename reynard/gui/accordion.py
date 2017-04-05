@@ -9,9 +9,11 @@ from Tkinter import Tk, Frame, PhotoImage, Label
 
 class Chord(Frame):
     '''Tkinter Frame with title argument'''
+
     def __init__(self, parent, title='', *args, **kw):
         Frame.__init__(self, parent, *args, **kw)
         self.title = title
+
 
 class Accordion(Frame):
     def __init__(self, parent, accordion_style=None):
@@ -25,7 +27,7 @@ class Accordion(Frame):
                 'title_bg': 'ghost white',
                 'title_fg': 'black',
                 'highlight': 'white smoke'
-                }
+            }
 
         self.columnconfigure(0, weight=1)
 
@@ -37,7 +39,7 @@ class Accordion(Frame):
         width = max([c.winfo_reqwidth() for c in chords])
 
         for c in chords:
-            i = PhotoImage() # blank image to force Label to use pixel size
+            i = PhotoImage()  # blank image to force Label to use pixel size
             label = Label(self, text=c.title,
                           image=i,
                           compound='center',
@@ -47,16 +49,24 @@ class Accordion(Frame):
                           bd=2, relief='groove')
 
             label.grid(row=row, column=0)
-            c.grid(row=row+1, column=0, sticky='nsew')
+            c.grid(row=row + 1, column=0, sticky='nsew')
             c.grid_remove()
             row += 2
 
             label.bind('<Button-1>', lambda e,
                        c=c: self._click_handler(c))
-            label.bind('<Enter>', lambda e,
-                       label=label, i=i: label.config(bg=self.style['highlight']))
-            label.bind('<Leave>', lambda e,
-                       label=label, i=i: label.config(bg=self.style['title_bg']))
+            label.bind(
+                '<Enter>',
+                lambda e,
+                label=label,
+                i=i: label.config(
+                    bg=self.style['highlight']))
+            label.bind(
+                '<Leave>',
+                lambda e,
+                label=label,
+                i=i: label.config(
+                    bg=self.style['title_bg']))
 
     def _click_handler(self, chord):
         if len(chord.grid_info()) == 0:
@@ -67,7 +77,6 @@ class Accordion(Frame):
 
 if __name__ == '__main__':
     from Tkinter import Entry, Button, Text
-
 
     root = Tk()
 
