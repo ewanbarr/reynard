@@ -21,7 +21,7 @@ if __name__ == "__main__":
     usage = "usage: %prog [options]"
     parser = OptionParser(usage=usage)
     parser.add_option(
-        '-H', '--host', dest='host', type=std,
+        '-H', '--host', dest='host', type=str,
         help='Hostname to setup on', default="127.0.0.1")
     parser.add_option(
         '-p', '--port', dest='port', type=long,
