@@ -74,6 +74,7 @@ class UniversalBackendInterface(AsyncDeviceServer):
                 ip = socket.gethostbyname(host)
                 log.debug("Searching for node at {0}:{1}".format(ip, port))
                 for name, client in self._nodes.items():
+                    log.debug("Testing client {0} at {1}".format(name,client.address))
                     if client.address == (ip, port) and client.is_connected():
                         log.debug(
                             "Found node at {0}:{1} named {2}".format(
