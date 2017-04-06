@@ -19,7 +19,7 @@ class Paf(object):
         @return     The capture nodes.
         """
 
-        return [get_node_by_ethernet_interface("10.17.9.1")]
+        return [get_node_by_ethernet_interface("effelsberg","10.17.9.1")]
 
     def set_capture_nodes(self):
         pass
