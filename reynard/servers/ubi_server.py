@@ -74,7 +74,7 @@ class UniversalBackendInterface(AsyncDeviceServer):
                 ip = socket.gethostbyname(host)
                 log.debug("Searching for node at {0}:{1}".format(ip, port))
                 for name, client in self._nodes.items():
-                    if client.address == (ip, port):
+                    if client.address == (ip, port) and client.is_connected():
                         log.debug(
                             "Found node at {0}:{1} named {2}".format(
                                 ip, port, name))
@@ -116,7 +116,8 @@ class UniversalBackendInterface(AsyncDeviceServer):
         log.debug("Sending '{0}' request to all nodes".format(cmd))
         futures = {}
         for name, client in self._nodes.items():
-            futures[name] = client.req[cmd](*args, **kwargs)
+            if client.is_connected():
+                futures[name] = client.req[cmd](*args, **kwargs)
         for name, future in futures.items():
             response = yield future
             if not response.reply.reply_ok():
@@ -201,8 +202,9 @@ class UniversalBackendInterface(AsyncDeviceServer):
         def status_handler():
             futures = {}
             for name, client in self._nodes.items():
-                future = client.req.device_status()
-                futures[name] = future
+                if client.is_connected():
+                    future = client.req.device_status()
+                    futures[name] = future
             statuses = {}
             for name, future in futures.items():
                 with_relative_timeout(2, future)
