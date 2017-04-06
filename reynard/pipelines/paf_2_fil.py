@@ -28,7 +28,7 @@ transient search.
 class PafFrbPipeline(Pipeline):
     def __init__(self):
         super(PafFrbPipeline, self).__init__()
-        self._volumes = ["reynard-scratch:/tmp/"]
+        self._volumes = ["/tmp/:/tmp/"]
         self._dada_key = None
         self._config = None
 

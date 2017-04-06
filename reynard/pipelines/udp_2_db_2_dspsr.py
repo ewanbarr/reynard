@@ -27,7 +27,7 @@ ring buffer for processing by DSPSR
 class Udp2Db2Dspsr(Pipeline):
     def __init__(self):
         super(Udp2Db2Dspsr, self).__init__()
-        self._volumes = ["reynard-scratch:/tmp/"]
+        self._volumes = ["/tmp/:/tmp/"]
         self._dada_key = None
         self._config = None
 

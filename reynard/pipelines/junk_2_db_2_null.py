@@ -29,7 +29,7 @@ The pipeline does nothing useful and is intended only for test purposes.
 class Junk2Db2Null(Pipeline):
     def __init__(self):
         super(Junk2Db2Null, self).__init__()
-        self._volumes = ["reynard-scratch:/tmp/"]
+        self._volumes = ["/tmp/:/tmp/"]
         self._dada_key = None
         self._duration = None
         self._config = None
@@ -57,9 +57,11 @@ class Junk2Db2Null(Pipeline):
         header["obs_id"] = "{0}_{1}".format(
             sensors["scannum"], sensors["subscannum"])
         dada_header_file = tempfile.NamedTemporaryFile(
-            mode="w", prefix="reynard_dada_header_", dir="/tmp/", delete=False)
+            mode="w", prefix="reynard_dada_header_",
+            dir="/tmp/", delete=False, suffix=".txt")
         dada_key_file = tempfile.NamedTemporaryFile(
-            mode="w", prefix="reynard_dada_keyfile_", dir="/tmp", delete=False)
+            mode="w", prefix="reynard_dada_keyfile_",
+            dir="/tmp/", delete=False, suffix=".key")
         dada_header_file.write(render_dada_header(header))
         dada_key_file.write(make_dada_key_string(self._dada_key))
         dada_header_file.close()
