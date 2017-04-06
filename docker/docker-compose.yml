@@ -1,4 +1,7 @@
 version: '2'
+volumes:
+  reynard-scratch:
+    driver: local
 services:
   status-server:
     build: .
@@ -28,37 +31,15 @@ services:
       - 5003:5003
     image: reynard
     command: reynard_ubi_server.py --port 5003 --log_level DEBUG
-  ubn-server-0:
+  ubn-server:
     build: .
-    container_name: ubn-server-0
-    network_mode: host
-    ports:
-      - 5004:5004
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/:/tmp/
-    image: reynard
-    command: reynard_ubn_server.py --port 5004 --log_level DEBUG
-  ubn-server-1:
-    build: .
-    container_name: ubn-server-1
-    network_mode: host
-    ports:
-      - 5005:5005
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/:/tmp/
-    image: reynard
-    command: reynard_ubn_server.py --port 5005 --log_level DEBUG
-  ubn-server-2:
-    build: .
-    container_name: ubn-server-2
+    container_name: ubn-server
     network_mode: host
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/:/tmp/
+      - reynard-scratch:/tmp/
     ports:
-      - 5007:5007
+      - 5100:5100
     image: reynard
-    command: reynard_ubn_server.py --port 5007 --log_level DEBUG
+    command: reynard_ubn_server.py --port 5100 --log_level DEBUG
     

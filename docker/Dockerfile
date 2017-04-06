@@ -33,6 +33,8 @@ RUN echo 'deb http://us.archive.ubuntu.com/ubuntu trusty main multiverse' >> /et
     git checkout tags/v0.6.1 && \
     python setup.py install
 
+ENV ARSE 1
+
 # Reynard-dev
 RUN cd soft && \
     git clone https://github.com/ewanbarr/reynard.git && \
@@ -41,4 +43,4 @@ RUN cd soft && \
     python setup.py install
 
 ENV PATH ${PATH}:/usr/local/bin
-ENV REYNARD_CONFIG /soft/reynard/config/
+ENV REYNARD_CONFIG /soft/reynard/configuration/
