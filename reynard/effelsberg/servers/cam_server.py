@@ -152,7 +152,9 @@ class EffCAMServer(AsyncDeviceServer):
 
 class EffController(object):
     STATES = [
-        "idle", "starting", "stopping",
+        "idle",
+        "starting",
+        "stopping",
         "waiting_for_scan_number_change",
         "waiting_status_change_to_observe",
         "waiting_status_change_from_observe",
@@ -303,7 +305,7 @@ class EffController(object):
         log.debug("Nodes to be configured: {0}".format(capture_nodes))
         tag = parse_tag(source_name)
         log.debug("Configurations tag from source name: {0}".format(tag))
-        template = config_manager.get_config(project, receiver, tag)
+        template = config_manager.get_pipeline_config(project, receiver, tag)
         log.debug("Found configuration template: {0}".format(template))
         config_dict = json.loads(Template(template).render(
             nodes=capture_nodes))

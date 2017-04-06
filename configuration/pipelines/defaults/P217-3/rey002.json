@@ -2,8 +2,8 @@
     "nodes": [
     {% for node in nodes%}
     {
-        "ip": "{{node.ip}}",
-        "port": {{node.port}},
+        "host": "{{node['host']}}",
+        "port": {{node['port']}},
         "pipelines":
         [
             {

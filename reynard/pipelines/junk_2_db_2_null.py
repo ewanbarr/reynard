@@ -29,7 +29,7 @@ The pipeline does nothing useful and is intended only for test purposes.
 class Junk2Db2Null(Pipeline):
     def __init__(self):
         super(Junk2Db2Null, self).__init__()
-        self._volumes = ["/tmp/:/tmp/"]
+        self._volumes = ["reynard-scratch:/tmp/"]
         self._dada_key = None
         self._duration = None
         self._config = None

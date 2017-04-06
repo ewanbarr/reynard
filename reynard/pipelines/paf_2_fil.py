@@ -4,7 +4,7 @@ from docker.errors import APIError
 from reynard.pipelines import Pipeline, reynard_pipeline
 from reynard.dada import render_dada_header, make_dada_key_string
 
-log = logging.getLogger("reynard.DspsrPipeline")
+log = logging.getLogger("reynard.PafFrbPipeline")
 
 #
 # NOTE: For this to run properly the host /tmp/
@@ -14,35 +14,27 @@ log = logging.getLogger("reynard.DspsrPipeline")
 #
 
 DESCRIPTION = """
-This pipeline captures data from the network and passes it to a dada
-ring buffer for processing by DSPSR
+This pipeline captures data from the PAF beamformer, performing
+channelisation, filterbank generation and ultimately a fast
+transient search.
 """.lstrip()
 
 
-@reynard_pipeline("DspsrPipeline",
+@reynard_pipeline("PafFrbPipeline",
                   description=DESCRIPTION,
                   version="1.0",
                   requires_nvidia=True
                   )
-class Udp2Db2Dspsr(Pipeline):
+class PafFrbPipeline(Pipeline):
     def __init__(self):
-        super(Udp2Db2Dspsr, self).__init__()
+        super(PafFrbPipeline, self).__init__()
         self._volumes = ["reynard-scratch:/tmp/"]
         self._dada_key = None
         self._config = None
 
     def _configure(self, config, sensors):
         self._config = config
-        self._dada_key = config["dada_db_params"]["key"]
-        try:
-            self._deconfigure()
-        except Exception:
-            pass
-        cmd = "dada_db -k {key} {args}".format(**config["dada_db_params"])
-        log.debug("Running command: {0}".format(cmd))
-        self._docker.run(
-            self._config["dada_db_params"]["image"],
-            cmd, remove=True, ipc_mode="host")
+        self._volumes.append("{}:/output/".format(config["output_path"]))
 
     def _start(self, sensors):
         header = self._config["dada_header_params"]

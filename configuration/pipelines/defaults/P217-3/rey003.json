@@ -3,8 +3,8 @@
     "nodes": [
     {% for node in nodes%}
     {
-        "ip": "{{node.ip}}",
-        "port": {{node.port}},
+        "host": "{{node['host']}}",
+        "port": {{node['port']}},
         "pipelines":
         [
             {
@@ -12,16 +12,16 @@
                 "pipeline_name":"PafPipeline",
                 "config":
                 {
-                    "params":
+                    "output_path":"/media/scratch/data/paf/filterbanks",
+                    "config_file_params":
                     [
-                        "IP {{node.eth2}}, {{node.eth4}}",
+                        "IP {{node['nic0']}}, {{node['nic1']}}",
                         "GPU_ID 0, 1",
                         "SOURCE Arse",
                         "TELESCOPE_ID 8",
-                        "RA XXX, YYY",
-                        "DEC XXX, YYY",
-                        "DM_START 0",
-                        "DM_END 1000"
+                        "MACHINE_DI 9",
+                        "RA 00:00:00, 00:01:00",
+                        "DEC 00:00:00, 00:01:00"
                     ]
                 }
             }

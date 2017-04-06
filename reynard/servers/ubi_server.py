@@ -1,4 +1,5 @@
 import logging
+import socket
 from tornado.gen import coroutine
 from katcp import AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete
@@ -69,7 +70,8 @@ class UniversalBackendInterface(AsyncDeviceServer):
             node_count = len(config["nodes"])
             configured = 0
             for node in config["nodes"]:
-                ip, port = node["ip"], node["port"]
+                host, port = node["host"], node["port"]
+                ip = socket.gethostbyname(host)
                 log.debug("Searching for node at {0}:{1}".format(ip, port))
                 for name, client in self._nodes.items():
                     if client.address == (ip, port):

@@ -1,5 +1,6 @@
 from collections import namedtuple
 from reynard.receiver import reynard_receiver
+from reynard.effelsberg.config import get_node_by_ethernet_interface
 
 node = namedtuple("Node", "name ip port")
 
@@ -18,9 +19,7 @@ class Paf(object):
         @return     The capture nodes.
         """
 
-        nodes = []
-        nodes.append(node("pacifix0", "127.0.0.1", 5007))
-        return nodes
+        return [get_node_by_ethernet_interface("10.17.9.1")]
 
     def set_capture_nodes(self):
         pass
