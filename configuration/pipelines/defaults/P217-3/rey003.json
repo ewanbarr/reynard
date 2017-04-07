@@ -16,13 +16,13 @@
                     "output_path":"/media/scratch/data/paf/filterbanks",
                     "config_file_params":
                     [
-                        "IP {{node['nics'][0]}}, {{node['nics'][1]}}",
-                        "GPU_ID 0, 1",
+                        "IP {{node['nics'][0]}}",
+                        "GPU_ID 0",
                         "SOURCE dummysource",
                         "TELESCOPE_ID 8",
                         "MACHINE_ID 9",
-                        "RA 0.0, 0.0",
-                        "DEC 0.0, 0.0"
+                        "RA 0.0",
+                        "DEC 0.0"
                     ]
                 }
             }
