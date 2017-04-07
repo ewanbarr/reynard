@@ -109,6 +109,7 @@ class Udp2Db2Dspsr(Pipeline):
             key=self._dada_key,
             args=self._config["udp2db_params"]["args"],
             headerfile=dada_header_file.name)
+        cmd = 'bash -c "{cmd}"'.format(cmd=cmd)
         log.debug("Running command: {0}".format(cmd))
         self._docker.run(
             self._config["udp2db_params"]["image"],
