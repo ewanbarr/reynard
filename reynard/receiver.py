@@ -13,6 +13,8 @@ def reynard_receiver(telescope, receiver):
         if telescope not in RECEIVER_REGISTRIES:
             RECEIVER_REGISTRIES[telescope] = {}
         RECEIVER_REGISTRIES[telescope][receiver] = cls
+        cls.telescope = telescope
+        cls.name = receiver
         return cls
     return wrapped
 

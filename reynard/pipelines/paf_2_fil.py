@@ -75,7 +75,7 @@ class PafFrbPipeline(Pipeline):
                 log.debug(
                     "Stopping {name} container".format(
                         name=container.name))
-                container.kill()
+                container.stop()
             except APIError:
                 pass
             try:

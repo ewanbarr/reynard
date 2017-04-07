@@ -102,7 +102,7 @@ class Udp2Db2Dspsr(Pipeline):
                          volumes=self._volumes, ulimits=ulimits,
                          requires_nvidia=True)
 
-        cmd = ("LD_PRELOAD=libvma.so udp2db "
+        cmd = ("LD_PRELOAD=libvma.so taskset -c 1 udp2db "
                "-k {key} {args} -H {headerfile}").format(
             key=self._dada_key,
             args=self._config["udp2db_params"]["args"],

@@ -45,8 +45,8 @@ NBIT         {{nbit}}                   # number of bits per sample
 NDIM         {{ndim}}                   # dimension of samples (2=complex, 1=real)
 NPOL         {{npol}}                   # number of polarizations observed
 NCHAN        {{nchan}}                  # number of channels here
-RESOLUTION   1                          # a parameter that is unclear
-DSB          1
+RESOLUTION   {{resolution}}             # a parameter that is unclear
+DSB          {{dsb}}
 # end of header
 """
 
@@ -58,7 +58,7 @@ DADA_DEFAULTS = {
     "ra": "00:00:00.00",
     "dec": "00:00:00.00",
     "telescope": "Effelsberg",
-    "instrument": "eff-universal-v1.0",
+    "instrument": "psrix",
     "receiver_name": "P217-3",
     "frequency_mhz": 1260,
     "bandwidth": 16,
@@ -66,7 +66,9 @@ DADA_DEFAULTS = {
     "nbit": 8,
     "ndim": 2,
     "npol": 2,
-    "nchan": 1
+    "nchan": 1,
+    "resolution":1,
+    "dsb":0
 }
 
 
