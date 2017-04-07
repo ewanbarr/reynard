@@ -89,7 +89,7 @@ def vma_config():
     else:
         raise Exception("no rdma_cm device found")
     for device in glob.glob("{}/uverbs*".format(path)):
-        response["devices"].append(device)
+        response["devices"].append(device.replace("/host-dev/","/dev/"))
     return response
 
 
