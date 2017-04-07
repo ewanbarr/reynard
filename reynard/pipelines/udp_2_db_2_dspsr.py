@@ -102,7 +102,7 @@ class Udp2Db2Dspsr(Pipeline):
         log.debug("Running command: {0}".format(cmd))
         self._docker.run(self._config["dspsr_params"]["image"], cmd,
                          detach=True, name="dspsr", ipc_mode="host",
-                         volumes=self._volumes, ulimits=self.ulimits,self.
+                         volumes=self._volumes, ulimits=self.ulimits,
                          requires_nvidia=True)
 
         cmd = ("LD_PRELOAD=libvma.so taskset -c 1 udp2db "
