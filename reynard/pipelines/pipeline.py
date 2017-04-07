@@ -3,6 +3,7 @@ Wrappers for generic compute pipelines on a node
 """
 import logging
 import os
+import glob
 import binascii
 import docker
 import urllib2
