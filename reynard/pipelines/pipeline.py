@@ -73,14 +73,23 @@ def nvidia_config(addr=NVIDA_DOCKER_PLUGIN_HOST):
 
 
 def vma_config():
-    params = {
-        "devices": [
-            "/dev/infiniband/uverbs0",
-            "/dev/infiniband/uverbs1",
-            "/dev/infiniband/rdma_cm"
-        ]
-    }
-    return params
+    path = None
+    if os.path.isdir("/host-dev/infiniband/"):
+        path = "/host-dev/infiniband/"
+    elif os.path.isdir("/dev/infiniband/"):
+        path = "/dev/infiniband/"
+    else:
+        raise Exception("Neither /dev/infiniband or /host-dev/infiniband found")
+    response = {}
+    response["devices"] = []
+    rdma_cm = "{}/rdma_cm".format(path)
+    if os.path.exists(rdma_cm):
+        response["devices"].append(rdma_cm)
+    else:
+        raise Exception("no rdma_cm device found")
+    for device in glob.glob("{}/uverbs*".format(path)):
+        response["devices"].append(device)
+    return response
 
 
 class Watchdog(Thread):

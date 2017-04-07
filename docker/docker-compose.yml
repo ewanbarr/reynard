@@ -7,7 +7,7 @@ services:
     ports:
       - 5000:5000
     image: reynard
-    command: reynard_eff_status_server.py -p 5000 
+    command: reynard_eff_status_server.py -p 5000
   effcam-server:
     build: .
     container_name: effcam-server
@@ -37,8 +37,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/:/tmp/
+      - /dev/:/host-dev/
     ports:
       - 5100:5100
     image: reynard
     command: reynard_ubn_server.py --host 134.104.70.90 --port 5100 --log_level DEBUG
-    
+
