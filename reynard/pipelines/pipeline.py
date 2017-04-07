@@ -85,7 +85,7 @@ def vma_config():
     response["devices"] = []
     rdma_cm = "{}/rdma_cm".format(path)
     if os.path.exists(rdma_cm):
-        response["devices"].append(rdma_cm)
+        response["devices"].append("/dev/infiniband/rdma_cm")
     else:
         raise Exception("no rdma_cm device found")
     for device in glob.glob("{}/uverbs*".format(path)):
