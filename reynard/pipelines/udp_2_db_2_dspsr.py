@@ -93,7 +93,6 @@ class Udp2Db2Dspsr(Pipeline):
 
         self._set_watchdog("dspsr", callback=self.stop)
         self._set_watchdog("udp2db")
-        self._set_watchdog("dbmonitor", persistent=True)
 
         cmd = "dspsr {args} -N {source_name} {keyfile}".format(
             args=self._config["dspsr_params"]["args"],
@@ -122,15 +121,8 @@ class Udp2Db2Dspsr(Pipeline):
             requires_vma=True,
             ulimits=self.ulimits)
 
-        cmd = "dada_dbmonitor -k {key} {args}".format(
-            key=self._dada_key,
-            args=self._config["dada_dbmonitor_params"]["args"])
-        log.debug("Running command: {0}".format(cmd))
-        self._docker.run(self._config["dada_dbmonitor_params"]["image"], cmd,
-                         detach=True, name="dbmonitor", ipc_mode="host")
-
     def _stop(self):
-        for name in ["dspsr", "udp2db", "dbmonitor"]:
+        for name in ["dspsr", "udp2db"]:
             container = self._docker.get(name)
             try:
                 log.debug(
@@ -158,7 +150,7 @@ class Udp2Db2Dspsr(Pipeline):
         reply["state"] = self.state
         if self.state == "running":
             container_info = []
-            for name in ["dspsr", "udp2db", "dbmonitor"]:
+            for name in ["dspsr", "udp2db"]:
                 container = self._docker.get(name)
                 detail = {
                     "name": container.name,
