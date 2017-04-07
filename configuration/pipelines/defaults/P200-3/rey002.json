@@ -15,7 +15,7 @@
                     "udp2db_params":
                     {
                         "image":"psr-capture:asterix",
-                        "args":"-v -p 48500 -s 18000",
+                        "args":"-v -p 48500 -s 18000"
                     },
                     "dspsr_params":
                     {

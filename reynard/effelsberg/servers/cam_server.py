@@ -310,9 +310,10 @@ class EffController(object):
         tag = parse_tag(source_name)
         log.debug("Configurations tag from source name: {0}".format(tag))
         template = config_manager.get_pipeline_config(project, receiver, tag)
-        log.debug("Found configuration template: {0}".format(template))
-        config_dict = json.loads(Template(template).render(
-            nodes=capture_nodes))
+        log.debug("Found configuration template:\n{0}".format(template))
+        rendered = Template(template).render(nodes=capture_nodes)
+        log.debug("Rendered template:\n{0}".format(rendered))
+        config_dict = json.loads(rendered)
         log.debug("Generated configuration: {0}".format(config_dict))
         log.debug("Requesting backend configure with 30 second timeout")
         configure_respose = yield self._backend.req.configure(

@@ -28,6 +28,7 @@ class P200Mode3(object):
             cmd,
             network_mode="host",
             remove=True)
+        log.debug("Completed: {}".format(cmd))
 
     def configure(self):
         log.info("Configuring firmware for P200-3")
