@@ -9,7 +9,7 @@
         [
             {
                 "name":"pipeline-0",
-                "pipeline_name":"PafPipeline",
+                "pipeline_name":"PafFrbPipeline",
                 "config":
                 {
                     "image":"paf-pipeline",
