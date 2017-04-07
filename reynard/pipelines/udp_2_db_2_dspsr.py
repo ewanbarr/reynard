@@ -25,6 +25,13 @@ ring buffer for processing by DSPSR
                   requires_nvidia=True
                   )
 class Udp2Db2Dspsr(Pipeline):
+
+    ulimits = [{
+        "Name": "memlock",
+        "Hard": -1,
+        "Soft": -1
+    }]
+
     def __init__(self):
         super(Udp2Db2Dspsr, self).__init__()
         self._volumes = ["/tmp/:/tmp/"]
@@ -42,7 +49,9 @@ class Udp2Db2Dspsr(Pipeline):
         log.debug("Running command: {0}".format(cmd))
         self._docker.run(
             self._config["dada_db_params"]["image"],
-            cmd, remove=True, ipc_mode="host")
+            cmd, remove=True,
+            ipc_mode="host",
+            ulimits=self.ulimits)
 
     def _start(self, sensors):
         header = self._config["dada_header_params"]
@@ -86,12 +95,6 @@ class Udp2Db2Dspsr(Pipeline):
         self._set_watchdog("udp2db")
         self._set_watchdog("dbmonitor", persistent=True)
 
-        ulimits = [{
-            "Name": "memlock",
-            "Hard": -1,
-            "Soft": -1
-        }]
-
         cmd = "dspsr {args} -N {source_name} {keyfile}".format(
             args=self._config["dspsr_params"]["args"],
             source_name=source_name,
@@ -99,7 +102,7 @@ class Udp2Db2Dspsr(Pipeline):
         log.debug("Running command: {0}".format(cmd))
         self._docker.run(self._config["dspsr_params"]["image"], cmd,
                          detach=True, name="dspsr", ipc_mode="host",
-                         volumes=self._volumes, ulimits=ulimits,
+                         volumes=self._volumes, ulimits=self.ulimits,self.
                          requires_nvidia=True)
 
         cmd = ("LD_PRELOAD=libvma.so taskset -c 1 udp2db "
@@ -117,7 +120,7 @@ class Udp2Db2Dspsr(Pipeline):
             ipc_mode="host",
             network_mode="host",
             requires_vma=True,
-            ulimits=ulimits)
+            ulimits=self.ulimits)
 
         cmd = "dada_dbmonitor -k {key} {args}".format(
             key=self._dada_key,
