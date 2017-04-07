@@ -37,13 +37,6 @@ class PafFrbPipeline(Pipeline):
         self._volumes.append("{}:/output/".format(config["output_path"]))
 
     def _start(self, sensors):
-        header["ra"] = sensors["ra"]
-        header["dec"] = sensors["dec"]
-        source_name = sensors["source-name"]
-        header["source_name"] = source_name
-        header["obs_id"] = "{0}_{1}".format(
-            sensors["scannum"], sensors["subscannum"])
-
         paf_config_file = tempfile.NamedTemporaryFile(
             mode="w",
             prefix="reynard_paf_config_",
@@ -82,7 +75,7 @@ class PafFrbPipeline(Pipeline):
                 log.debug(
                     "Stopping {name} container".format(
                         name=container.name))
-                container.kill()
+                container.stop()
             except APIError:
                 pass
             try:

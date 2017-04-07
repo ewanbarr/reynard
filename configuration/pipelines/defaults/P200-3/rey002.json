@@ -15,7 +15,7 @@
                     "udp2db_params":
                     {
                         "image":"psr-capture:asterix",
-                        "args":"-v -p 48500 -s 18000",
+                        "args":"-v -p 48500 -s 18000"
                     },
                     "dspsr_params":
                     {
@@ -39,7 +39,7 @@
                         "telescope":"Effelsberg",
                         "instrument":"asterix",
                         "frequency_mhz":1370,
-                        "receiver_name":"P217-3",
+                        "receiver_name":"P200-3",
                         "bandwidth":320,
                         "tsamp":0.00156250,
                         "nbit":8,

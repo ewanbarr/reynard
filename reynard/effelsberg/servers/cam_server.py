@@ -169,18 +169,20 @@ class EffController(object):
         self.sensors = self.cam_server._status_server.sensor
         self.status = self.cam_server._controller_status
         self._prev_receiver = None
+        self._receiver = None
         self._backend = None
 
-    @coroutine
-    def update_firmware(self):
-        receiver = yield self.sensors.receiver.get_value()
-        if self._prev_receiver != receiver:
-            log.info("Setting firmware for reciver {0}".format(receiver))
-            self._prev_receiver = receiver
-        # checking receiver wavelength.version
-        # checking frequency
-        # getting firmware controller
-        # configure_firmware(receiver,frequency)
+    def _set_receiver(self, receiver_name):
+        recvcls = get_receiver("effelsberg", receiver_name)
+        if not self._receiver:
+            self._receiver = recvcls()
+            self._receiver.configure()
+        elif self._receiver.__class__ != recvcls:
+            self._receiver.deconfigure()
+            self._receiver = recvcls()
+            self._receiver.configure()
+        else:
+            pass
 
     @coroutine
     def start(self):
@@ -212,6 +214,8 @@ class EffController(object):
             yield self.deconfigure_nodes()
         except Exception:
             log.exception("Error on stop and deconfigure nodes")
+        if self._receiver:
+            self._receiver.deconfigure()
         self.status.set_value("idle")
         self.cam_server._device_armed.set_value(False)
 
@@ -300,15 +304,16 @@ class EffController(object):
         msg = ("Configuring for observation of source '{0}' "
                "with receiver '{1}' for project '{2}'")
         log.info(msg.format(source_name, receiver, project))
-        receiver_instance = get_receiver("effelsberg", receiver)()
-        capture_nodes = receiver_instance.get_capture_nodes()
+        self._set_receiver(receiver)
+        capture_nodes = self._receiver.get_capture_nodes()
         log.debug("Nodes to be configured: {0}".format(capture_nodes))
         tag = parse_tag(source_name)
         log.debug("Configurations tag from source name: {0}".format(tag))
         template = config_manager.get_pipeline_config(project, receiver, tag)
-        log.debug("Found configuration template: {0}".format(template))
-        config_dict = json.loads(Template(template).render(
-            nodes=capture_nodes))
+        log.debug("Found configuration template:\n{0}".format(template))
+        rendered = Template(template).render(nodes=capture_nodes)
+        log.debug("Rendered template:\n{0}".format(rendered))
+        config_dict = json.loads(rendered)
         log.debug("Generated configuration: {0}".format(config_dict))
         log.debug("Requesting backend configure with 30 second timeout")
         configure_respose = yield self._backend.req.configure(
@@ -332,7 +337,8 @@ class EffController(object):
             raise Exception("Error on backend start request: {0}".format(
                 response.messages))
         log.debug("Backend start successful")
-        log.debug("[DUMMY] Sending 1 PPS trigger to firmware")
+        log.debug("Sending 1 PPS trigger to firmware")
+        self._receiver.trigger()
 
     @coroutine
     def stop_nodes(self):
