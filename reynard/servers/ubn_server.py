@@ -109,6 +109,7 @@ class UniversalBackendNode(AsyncDeviceServer):
                 try:
                     server = self._create_pipeline_server(name, pipeline_name)
                 except Exception as error:
+                    log.error(str(error))
                     req.reply("fail", str(error))
                     return
                 else:
@@ -117,6 +118,7 @@ class UniversalBackendNode(AsyncDeviceServer):
                 try:
                     client = self._create_pipeline_client(name, server)
                 except Exception as error:
+                    log.error(str(error))
                     req.reply("fail", str(error))
                     return
                 else:
@@ -133,6 +135,7 @@ class UniversalBackendNode(AsyncDeviceServer):
                     reply = ("Configuration of pipeline '{0}' "
                              "failed with message: {1}").format(
                         name, str(configure_response.messages))
+                    log.error(reply)
                     req.reply("fail", reply)
                     return
             req.reply("ok", "All pipelines created and configured")
@@ -141,6 +144,7 @@ class UniversalBackendNode(AsyncDeviceServer):
         if self._active.value():
             msg = ("Node is already active, "
                    "deconfigure before sending new configure commands")
+            log.error(msg)
             return ("fail", msg)
         conf = unpack_dict(pipeline_config)
         self.ioloop.add_callback(lambda: configure(conf))
