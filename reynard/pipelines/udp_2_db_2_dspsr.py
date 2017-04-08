@@ -1,5 +1,6 @@
 import logging
 import tempfile
+from datetime import datetime
 from docker.errors import APIError
 from reynard.pipelines import Pipeline, reynard_pipeline
 from reynard.dada import render_dada_header, make_dada_key_string
@@ -94,9 +95,13 @@ class Udp2Db2Dspsr(Pipeline):
         self._set_watchdog("dspsr", callback=self.stop)
         self._set_watchdog("udp2db")
 
-        cmd = "dspsr {args} -N {source_name} {keyfile}".format(
+
+        tstr = datetime.strftime(datetime.utcnow(),"%Y-%m-%d-%H:%M:%S")
+        out_path = os.path.join(self._config["base_output_dir"],tstr,source_name)
+        cmd = "dspsr {args} -N {source_name} -O {out_path} {keyfile}".format(
             args=self._config["dspsr_params"]["args"],
             source_name=source_name,
+            out_path=out_path,
             keyfile=dada_key_file.name)
         log.debug("Running command: {0}".format(cmd))
         self._docker.run(self._config["dspsr_params"]["image"], cmd,
