@@ -1,5 +1,6 @@
 import logging
 import tempfile
+import os
 from datetime import datetime
 from docker.errors import APIError
 from reynard.pipelines import Pipeline, reynard_pipeline
