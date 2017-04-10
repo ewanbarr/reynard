@@ -106,7 +106,7 @@ class Udp2Db2Dspsr(Pipeline):
             out_path=out_path,
             keyfile=dada_key_file.name)
 
-        cmd = "bash -c 'mkdir -p {out_path}' ; {cmd}".format(
+        cmd = "bash -c 'mkdir -p {out_path} ; {cmd}'".format(
             cmd=cmd, out_path=out_path)
 
         volumes = [
