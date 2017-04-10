@@ -19,6 +19,12 @@ def run(cmd,bg=False):
     proc = Popen(cmd,shell=True,stdout=PIPE,stderr=PIPE)
     return proc
 
+def safe_wait(proc):
+    proc.wait()
+    if proc.returnval != 0:
+        print "ERROR from",proc
+        print proc.stdout.read()
+        print proc.stderr.read()
 
 def tag(image, repo=REPONAME):
     if image.startswith(repo):
