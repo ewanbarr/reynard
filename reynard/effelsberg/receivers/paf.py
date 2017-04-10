@@ -1,9 +1,9 @@
-from reynard.receiver import reynard_receiver
+from reynard.receiver import reynard_receiver, Receiver
 from reynard.effelsberg.config import get_node_by_ethernet_interface
 
 
 @reynard_receiver("effelsberg", "P217-3")
-class Paf(object):
+class Paf(Receiver):
     def __init__(self):
         pass
 

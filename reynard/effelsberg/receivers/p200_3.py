@@ -1,14 +1,15 @@
 import logging
 import docker
-from reynard.receiver import reynard_receiver
+from reynard.receiver import reynard_receiver, Receiver
 from reynard.effelsberg.config import get_node_by_ethernet_interface
 
 log = logging.getLogger("reynard.effelsberg.receivers.p200-3")
 
 @reynard_receiver("effelsberg", "P200-3")
-class P200Mode3(object):
+class P200Mode3(Receiver):
     def __init__(self):
         self.client = docker.from_env()
+        super(P200Mode3,self).__init__()
 
     def get_capture_nodes(self):
         """
@@ -24,7 +25,7 @@ class P200Mode3(object):
     def _run(self, cmd):
         log.debug("Calling: {}".format(cmd))
         self.client.containers.run(
-            "firmware-control:latest",
+            "docker.mpifr-bonn.mpg.de:5000/firmware-control:latest",
             cmd,
             network_mode="host",
             remove=True)

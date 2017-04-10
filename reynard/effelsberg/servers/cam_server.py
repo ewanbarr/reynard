@@ -216,6 +216,7 @@ class EffController(object):
             log.exception("Error on stop and deconfigure nodes")
         if self._receiver:
             self._receiver.deconfigure()
+            self._receiver = None
         self.status.set_value("idle")
         self.cam_server._device_armed.set_value(False)
 
