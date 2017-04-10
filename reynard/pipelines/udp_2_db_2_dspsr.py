@@ -122,10 +122,12 @@ class Udp2Db2Dspsr(Pipeline):
             cmd,
             detach=True,
             volumes=self._volumes,
+            environment={"VMA_MTU":9000},
             name="udp2db",
             ipc_mode="host",
             network_mode="host",
             requires_vma=True,
+
             ulimits=self.ulimits)
 
     def _stop(self):
