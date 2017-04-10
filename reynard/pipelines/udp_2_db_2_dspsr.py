@@ -139,7 +139,7 @@ class Udp2Db2Dspsr(Pipeline):
             cmd,
             cpu_shares=9999,
             cpuset_cpus="1",
-            cpu_period=1e9,
+            cpu_period=10000000000,
             detach=True,
             volumes=self._volumes,
             environment={"VMA_MTU":9000},
