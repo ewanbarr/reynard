@@ -45,9 +45,8 @@ if __name__ == "__main__":
     parser.add_argument('-c','--config', type=str,
         help='Configuration containing nodes to be booted',
         default=None, required=False)
-    parser.add_argument('-r','--restart', type=bool,
-        help='Restart ubn servers on all nodes',
-        default=False, required=False)
+    parser.add_argument('-r','--restart', action="store_true",
+        help='Restart ubn servers on all nodes', required=False)
     args = parser.parse_args()
 
     if args.config:
