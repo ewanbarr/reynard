@@ -118,8 +118,6 @@ class Udp2Db2Dspsr(Pipeline):
         self._docker.run(
             self._config["dspsr_params"]["image"],
             cmd,
-            cpu_shares=8888,
-            cpuset_cpus="0",
             detach=True,
             name="dspsr",
             ipc_mode="host",
