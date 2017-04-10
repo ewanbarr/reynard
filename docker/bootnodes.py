@@ -19,6 +19,7 @@ def bootnode(hostname,port=5100):
     ssh_cmd = "ssh {0} {1}".format(hostname,docker)
     print ssh_cmd
     os.system(ssh_cmd)
+    print "-"*50
 
 def main(nodes):
     for node in nodes:

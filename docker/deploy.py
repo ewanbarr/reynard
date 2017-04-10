@@ -21,10 +21,12 @@ def run(cmd,bg=False):
 
 def safe_wait(proc):
     proc.wait()
-    if proc.returnval != 0:
-        print "ERROR from",proc
-        print proc.stdout.read()
-        print proc.stderr.read()
+    out = proc.stdout.read()
+    err = proc.stderr.read()
+    if "ERROR" in out.upper():
+        print out
+    if "ERROR" in err.upper():
+        print err
 
 def tag(image, repo=REPONAME):
     if image.startswith(repo):
