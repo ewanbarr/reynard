@@ -1,3 +1,4 @@
+import os
 import sys
 import socket
 import json
@@ -15,7 +16,9 @@ def bootnode(hostname,port=5100):
               "-v /var/run/docker.sock:/var/run/docker.sock "
               "{image} {cmd}").format(image=IMAGE, cmd=cmd,
                                       port=port)
-    print ("ssh {0} {1}".format(hostname,docker))
+    ssh_cmd = "ssh {0} {1}".format(hostname,docker)
+    print ssh_cmd
+    os.system(ssh_cmd)
 
 def main(nodes):
     for node in nodes:
