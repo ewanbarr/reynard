@@ -10,7 +10,7 @@ def bootnode(hostname,port=5100):
     cmd = ("reynard_ubn_server.py --host {ip} "
            "--port {port} --log_level DEBUG").format(
            ip=ip,port=port)
-    docker = ("docker run -d -p {port}:{port}"
+    docker = ("docker run -d -p {port}:{port} "
               "--name ubn-server --net=host "
               "-v /dev/:/host-dev/ -v /tmp/:/tmp/ "
               "-v /var/run/docker.sock:/var/run/docker.sock "
