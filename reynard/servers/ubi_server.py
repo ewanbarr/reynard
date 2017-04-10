@@ -185,7 +185,9 @@ class UniversalBackendInterface(AsyncDeviceServer):
         msg = [""]
         for ii, (name, node) in enumerate(self._nodes.items()):
             up = "[online]" if node.is_connected() else "[offline]"
-            msg.append("{node.name} {node.address} {up}".format(node=node,up=up))
+            addr = "{0}:{1}".format(**node.address)
+            msg.append("{node.name: <12} {addr}: {up}".format(
+                node=node, addr=addr, up=up))
         req.inform("\n\_\_\_\_".join(msg))
         return ("ok", "{count} nodes found".format(count=len(self._nodes)))
 
