@@ -115,10 +115,17 @@ class Udp2Db2Dspsr(Pipeline):
         ]
 
         log.debug("Running command: {0}".format(cmd))
-        self._docker.run(self._config["dspsr_params"]["image"], cmd,
-                         detach=True, name="dspsr", ipc_mode="host",
-                         volumes=volumes, ulimits=self.ulimits,
-                         requires_nvidia=True)
+        self._docker.run(
+            self._config["dspsr_params"]["image"],
+            cmd,
+            cpu_shares=8888,
+            cpuset_cpus="0",
+            detach=True,
+            name="dspsr",
+            ipc_mode="host",
+            volumes=volumes,
+            ulimits=self.ulimits,
+            requires_nvidia=True)
 
         cmd = ("LD_PRELOAD=libvma.so taskset -c 1 udp2db "
                "-k {key} {args} -H {headerfile}").format(
@@ -130,6 +137,9 @@ class Udp2Db2Dspsr(Pipeline):
         self._docker.run(
             self._config["udp2db_params"]["image"],
             cmd,
+            cpu_shares=9999,
+            cpuset_cpus="1",
+            cpu_period=1e9,
             detach=True,
             volumes=self._volumes,
             environment={"VMA_MTU":9000},
