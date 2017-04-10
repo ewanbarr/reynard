@@ -12,7 +12,7 @@
                 "pipeline_name":"PafFrbPipeline",
                 "config":
                 {
-                    "image":"paf-pipeline",
+                    "image":"docker.mpifr-bonn.mpg.de:5000/paf-pipeline:latest",
                     "output_path":"/media/scratch/data/paf/filterbanks",
                     "config_file_params":
                     [
