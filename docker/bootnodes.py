@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     if args.config:
         with open(args.config) as f:
-            conf = json.loads(f)
+            conf = json.load(f)
             nodes = [node['host'] for node in conf]
     elif args.nodes:
         nodes = args.nodes
