@@ -135,6 +135,7 @@ class Udp2Db2Dspsr(Pipeline):
         self._docker.run(
             self._config["udp2db_params"]["image"],
             cmd,
+            cap_add=["ALL"],
             cpu_shares=262144,
             cpuset_cpus="1",
             detach=True,
