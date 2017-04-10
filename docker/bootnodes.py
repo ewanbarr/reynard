@@ -21,7 +21,17 @@ def bootnode(hostname,port=5100):
     os.system(ssh_cmd)
     print "-"*50
 
-def main(nodes):
+def restart(hostname):
+    ssh_cmd = "ssh {0} docker restart ubn-server".format(hostname)
+    print ssh_cmd
+    os.system(ssh_cmd)
+    print "-"*50
+
+def restart_all(nodes):
+    for node in nodes:
+      restart(node)
+
+def boot_all(nodes):
     for node in nodes:
       bootnode(node)
 
@@ -35,6 +45,9 @@ if __name__ == "__main__":
     parser.add_argument('-c','--config', type=str,
         help='Configuration containing nodes to be booted',
         default=None, required=False)
+    parser.add_argument('-r','--restart', type=bool,
+        help='Restart ubn servers on all nodes',
+        default=False, required=False)
     args = parser.parse_args()
 
     if args.config:
@@ -44,7 +57,10 @@ if __name__ == "__main__":
     elif args.nodes:
         nodes = args.nodes
     else:
-        print "Must specify a cconfig file or a list of nodes"
+        print "Must specify a config file or a list of nodes"
         sys.exit()
-    main(nodes)
+    if args.restart:
+        restart_all(nodes)
+    else:
+        boot_all(nodes)
 
