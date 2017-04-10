@@ -135,9 +135,8 @@ class Udp2Db2Dspsr(Pipeline):
         self._docker.run(
             self._config["udp2db_params"]["image"],
             cmd,
-            cpu_shares=9999,
+            cpu_shares=1000000,
             cpuset_cpus="1",
-            cpu_period=10000000000,
             detach=True,
             volumes=self._volumes,
             environment={"VMA_MTU":9000},
