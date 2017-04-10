@@ -28,7 +28,7 @@ if __name__ == "__main__":
     parser.add_argument('-n','--nodes', nargs='+',
         help='Hosts to boot ubn servers on',
         default=None, required=False)
-    parser.add_argument('-c','--config', nargs=1, type=str,
+    parser.add_argument('-c','--config', type=str,
         help='Configuration containing nodes to be booted',
         default=None, required=False)
     args = parser.parse_args()

@@ -59,7 +59,7 @@ if __name__ == "__main__":
     parser.add_argument('-H','--hosts', nargs='+',
         help='Hosts to deploy to.\nDefaults:\n\t{0}'.format("\n\t".join(HOSTS)),
         default=HOSTS, required=False)
-    parser.add_argument('-r','--registry', nargs=1, type=str,
+    parser.add_argument('-r','--registry', type=str,
         help='Registry name to tag images with.\nDefault: {0}'.format(REPONAME),
         default=REPONAME, required=False)
     args = parser.parse_args()
