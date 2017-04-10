@@ -64,4 +64,4 @@ if __name__ == "__main__":
         default=REPONAME, required=False)
     args = parser.parse_args()
     print args
-    #main(args.images,args.hosts,args.registry)
+    main(args.images,args.hosts,args.registry)
