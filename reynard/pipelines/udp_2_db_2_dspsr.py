@@ -98,16 +98,26 @@ class Udp2Db2Dspsr(Pipeline):
 
 
         tstr = datetime.strftime(datetime.utcnow(),"%Y-%m-%d-%H:%M:%S")
-        out_path = os.path.join(self._config["base_output_dir"],tstr,source_name)
+        out_path = os.path.join("/output/",tstr,source_name)
+
         cmd = "dspsr {args} -N {source_name} -O {out_path} {keyfile}".format(
             args=self._config["dspsr_params"]["args"],
             source_name=source_name,
             out_path=out_path,
             keyfile=dada_key_file.name)
+
+        cmd = "bash -c 'mkdir -p {out_path}' ; {cmd}".format(
+            cmd=cmd, out_path=out_path)
+
+        volumes = [
+            "/tmp/:/tmp/",
+            "{}:/output/".format(self._config["base_output_dir"])
+        ]
+
         log.debug("Running command: {0}".format(cmd))
         self._docker.run(self._config["dspsr_params"]["image"], cmd,
                          detach=True, name="dspsr", ipc_mode="host",
-                         volumes=self._volumes, ulimits=self.ulimits,
+                         volumes=volumes, ulimits=self.ulimits,
                          requires_nvidia=True)
 
         cmd = ("LD_PRELOAD=libvma.so taskset -c 1 udp2db "
