@@ -43,7 +43,7 @@ def pack_dict(x):
 
 
 def unpack_dict(x):
-    return json.loads(decode_katcp_message(x))
+    return json.loads(escape_string(x))
 
 
 class StreamClient(DeviceClient):
