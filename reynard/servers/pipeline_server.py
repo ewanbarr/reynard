@@ -103,6 +103,8 @@ class PipelineServer(AsyncDeviceServer):
             except:
                 log.warning("Could not decode pipeline status message")
                 pass
+            else:
+                status["info"] = pipeline_status
             req.reply("ok",pack_dict(status))
         self.ioloop.add_callback(status_query)
         raise AsyncReply

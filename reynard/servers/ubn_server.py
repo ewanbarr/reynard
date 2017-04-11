@@ -79,7 +79,7 @@ class UniversalBackendNode(AsyncDeviceServer):
         if pipeline_name not in PIPELINE_REGISTRY:
             raise InvalidPipeline("Invalid pipeline name "+pipeline_name)
         pipeline_type = PIPELINE_REGISTRY[pipeline_name]["class"]
-        server = PipelineServer("localhost", 0, pipeline_type)
+        server = PipelineServer(self.bind_address[0], 0, pipeline_type)
         self._pipeline_servers[name] = server
         server.start()
         return server
