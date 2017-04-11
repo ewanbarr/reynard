@@ -254,7 +254,18 @@ class Pipeline(Stateful):
                         str(error)))
 
     def _status(self):
-        raise NotImplementedError
+        container_info = {}
+        if self.state == "running":
+            for watchdog in self._watchdogs:
+                name = watchdog._name
+                container = self._docker._client.containers.get(name)
+                container_info[name] = {
+                    "name": container.name,
+                    "status": container.status,
+                    "procs": container.top(),
+                    "logs": container.logs(tail=20)
+                }
+        return container_info
 
     def reset(self):
         try:

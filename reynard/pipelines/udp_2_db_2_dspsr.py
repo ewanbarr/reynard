@@ -171,20 +171,3 @@ class Udp2Db2Dspsr(Pipeline):
         cmd = "dada_db -d -k {0}".format(self._dada_key)
         log.debug("Running command: {0}".format(cmd))
         self._docker.run("psr-capture", cmd, remove=True, ipc_mode="host")
-
-    def _status(self):
-        reply = {}
-        reply["state"] = self.state
-        if self.state == "running":
-            container_info = []
-            for name in ["dspsr", "udp2db"]:
-                container = self._docker.get(name)
-                detail = {
-                    "name": container.name,
-                    "status": container.status,
-                    "procs": container.top(),
-                    "logs": container.logs(tail=20)
-                }
-                container_info.append(detail)
-            reply["info"] = container_info
-        return reply

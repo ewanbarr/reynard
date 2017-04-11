@@ -46,7 +46,7 @@ def unpack_dict(x):
     try:
         return json.loads(decode_katcp_message(x))
     except:
-        return json.loads(x.replace("\_"," "))
+        return json.loads(x.replace("\_"," ").replace("\n","\\n"))
 
 
 class StreamClient(DeviceClient):
