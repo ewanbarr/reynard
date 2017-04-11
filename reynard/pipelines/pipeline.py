@@ -259,6 +259,8 @@ class Pipeline(Stateful):
             for watchdog in self._watchdogs:
                 name = watchdog._name
                 container = self._docker._client.containers.get(name)
+                logs = container.logs(tail=20)
+                logs = "\n".join([i.split("\r")[-1] for i in logs.split("\n")])
                 container_info[name] = {
                     "name": container.name,
                     "status": container.status,
