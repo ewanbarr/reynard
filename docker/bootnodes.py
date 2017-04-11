@@ -6,6 +6,7 @@ import json
 IMAGE = "docker.mpifr-bonn.mpg.de:5000/reynard:latest"
 
 def bootnode(hostname,port=5100):
+    stopnode(hostname)
     ip = socket.gethostbyname(hostname)
     cmd = ("reynard_ubn_server.py --host {ip} "
            "--port {port} --log_level DEBUG").format(
@@ -17,6 +18,12 @@ def bootnode(hostname,port=5100):
               "{image} {cmd}").format(image=IMAGE, cmd=cmd,
                                       port=port)
     ssh_cmd = "ssh {0} {1}".format(hostname,docker)
+    print ssh_cmd
+    os.system(ssh_cmd)
+    print "-"*50
+
+def stopnode(hostname):
+    ssh_cmd = "bash -c 'docker stop ubn-server; docker rm ubn-server'"
     print ssh_cmd
     os.system(ssh_cmd)
     print "-"*50
