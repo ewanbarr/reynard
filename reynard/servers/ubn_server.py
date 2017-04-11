@@ -51,7 +51,7 @@ class UniversalBackendNode(AsyncDeviceServer):
         self.add_sensor(self._device_status)
         self.add_sensor(self._active)
         self._monitors["disk"] = DiskMonitor([("root", "/"), ])
-        self._monitors["cpu"] = CpuMonitor()
+        #self._monitors["cpu"] = CpuMonitor()
         self._monitors["memory"] = MemoryMonitor()
         for monitor in self._monitors.values():
             for sensor in monitor.sensors():
