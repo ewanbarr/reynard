@@ -93,6 +93,22 @@ class PipelineServer(AsyncDeviceServer):
     @return_reply(Str())
     def request_status(self, req):
         """Return available pipelines"""
+        status = {}
+        @coroutine
+        def status_query():
+            status["status"] = self._pipeline_status.value()
+            try:
+                status["info"] = self._pipeline.status()
+            except:
+                pass
+            req.reply("ok",pack_dict(status))
+        self.ioloop.add_callback(status_query)
+        raise AsyncReply
+
+    @request()
+    @return_reply(Str())
+    def request_logs(self, req):
+        """Return available pipelines"""
         @coroutine
         def status_getter():
             border = "-" * 50

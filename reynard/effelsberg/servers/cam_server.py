@@ -117,6 +117,24 @@ class EffCAMServer(AsyncDeviceServer):
 
     @request()
     @return_reply(Str())
+    def request_status(self, req):
+        """Request full status of system"""
+        status = {}
+        @coroutine
+        def status_query():
+            futures = {}
+            for name, client in self._backends.items():
+                futures[name] = client.req.status()
+            for name, future in futures.items():
+                response = yield future
+                status[name] = unpack_dict(response.reply.arguments[1])
+            req.reply("ok",pack_dict(status))
+        self.ioloop.add_callback(status_query)
+        raise AsyncReply
+
+
+    @request()
+    @return_reply(Str())
     def request_arm(self, req):
         """Arm the controller"""
         @coroutine

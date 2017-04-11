@@ -192,6 +192,28 @@ class UniversalBackendInterface(AsyncDeviceServer):
         return ("ok", "{count} nodes found".format(count=len(self._nodes)))
 
     @request()
+    @return_reply(Str())
+    def request_status(self, req):
+        """Return status for UBI backend"""
+        status = {}
+        @coroutine
+        def status_query():
+            futures = {}
+            for name, client in self._nodes.items():
+                if not client.is_connected():
+                    status[name] = {"status":"offline"}
+                    continue
+                else:
+                    status[name] = {"status":"online"}
+                    futures[name] = client.req.status()
+            for name, future in futures.items():
+                response = yield future
+                status[name].update(unpack_dict(response.reply.arguments[1]))
+            req.reply("ok",pack_dict(status))
+        self.ioloop.add_callback(status_query)
+        raise AsyncReply
+
+    @request()
     @return_reply(Discrete(DEVICE_STATUSES))
     def request_device_status(self, req):
         """Return status of the instrument.

@@ -278,3 +278,30 @@ class UniversalBackendNode(AsyncDeviceServer):
             return ("ok", "ok")
         else:
             return ("fail", "No pipeline named '{0}'".format(name))
+
+
+    @request()
+    @return_reply(Str())
+    def request_status(self, req):
+        """Return status for UBN server"""
+        status = {}
+        @coroutine
+        def status_query():
+            status["sensors"] = {}
+            for name, sensor in self._sensors.items():
+                status["sensors"][name] = sensor.value()
+
+            futures = {}
+            for name, client in self._pipeline_clients.items():
+                if not client.is_connected():
+                    status[name] = {"status":"offline"}
+                    continue
+                else:
+                    status[name] = {"status":"online"}
+                    futures[name] = client.req.status()
+            for name, future in futures.items():
+                response = yield future
+                status[name].update(unpack_dict(response.reply.arguments[1]))
+            req.reply("ok",pack_dict(status))
+        self.ioloop.add_callback(status_query)
+        raise AsyncReply
