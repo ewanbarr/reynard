@@ -301,7 +301,7 @@ class UniversalBackendNode(AsyncDeviceServer):
                     futures[name] = client.req.status()
             for name, future in futures.items():
                 response = yield future
-                log.debug(response.reply.messages)
+                log.debug(response.messages)
                 if response.reply.reply_ok():
                     status[name].update(unpack_dict(response.reply.arguments[1]))
                 else:
