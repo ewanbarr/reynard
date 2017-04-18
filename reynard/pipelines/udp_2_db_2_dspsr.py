@@ -114,6 +114,7 @@ class Udp2Db2Dspsr(Pipeline):
         except Exception as error:
             if error.errno != 17:
                 raise error
+            log.debug(str(error))
         cmd = "dspsr {args} -N {source_name} {keyfile}".format(
             args=self._config["dspsr_params"]["args"],
             source_name=source_name,
@@ -148,6 +149,7 @@ class Udp2Db2Dspsr(Pipeline):
         except Exception as error:
             if error.errno != 17:
                 raise error
+            log.debug(str(error))
         psrchive = self._docker.run(
             self._config["psrchive_params"]["image"],
             detach=True,
