@@ -139,7 +139,7 @@ class Udp2Db2Dspsr(Pipeline):
         workdir = "/archives/"
         volumes = [
             "/home/share:/home/share",
-            host_out_path:workdir
+            "{0}:{1}".format(host_out_path,workdir)
         ]
         out_dir = os.path.join("/home/share/monitors/timing/",source_name,tstr)
         try:
