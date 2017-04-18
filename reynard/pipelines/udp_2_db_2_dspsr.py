@@ -99,12 +99,20 @@ class Udp2Db2Dspsr(Pipeline):
 
         self._set_watchdog("dspsr", callback=self.stop)
         self._set_watchdog("udp2db")
+        self._set_watchdog("psrchive")
 
         ###################
         ## Start up DSPSR
         ###################
         tstr = sensors["timestamp"]
         out_path = os.path.join("/output/",source_name,tstr)
+        host_out_path = os.path.join(self._config["base_output_dir"],
+            source_name,tstr)
+        try:
+            os.makedirs(host_out_path)
+        except Exception as error:
+            if error.errno != 17:
+                raise error
         cmd = "dspsr {args} -N {source_name} {keyfile}".format(
             args=self._config["dspsr_params"]["args"],
             source_name=source_name,
