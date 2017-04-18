@@ -110,7 +110,7 @@ class Udp2Db2Dspsr(Pipeline):
             source_name,tstr)
         log.debug("Making directories: {}".format(host_out_path))
         try:
-            os.makedirs(host_out_path)
+            os.makedirs(host_out_path,mode=0664)
         except Exception as error:
             if error.errno != 17:
                 raise error
@@ -144,7 +144,7 @@ class Udp2Db2Dspsr(Pipeline):
         ]
         out_dir = os.path.join("/home/share/monitors/timing/",source_name,tstr)
         try:
-            os.makedirs(out_dir)
+            os.makedirs(out_dir,mode=0664)
         except Exception as error:
             if error.errno != 17:
                 raise error
