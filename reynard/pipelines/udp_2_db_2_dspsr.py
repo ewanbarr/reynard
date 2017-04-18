@@ -136,15 +136,17 @@ class Udp2Db2Dspsr(Pipeline):
         ############################
         ## Start up PSRCHIVE monitor
         ############################
-
-        volumes.append("/home/share:/home/share")
+        workdir = "/archives/"
+        volumes = [
+            "/home/share:/home/share",
+            host_out_path:workdir
+        ]
         out_dir = os.path.join("/home/share/monitors/timing/",source_name,tstr)
         try:
             os.makedirs(out_dir)
         except Exception as error:
             if error.errno != 17:
                 raise error
-        workdir = out_path
         psrchive = self._docker.run(
             self._config["psrchive_params"]["image"],
             detach=True,
