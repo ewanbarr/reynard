@@ -112,7 +112,7 @@ class Udp2Db2Dspsr(Pipeline):
             args=self._config["dspsr_params"]["args"],
             source_name=source_name,
             keyfile=dada_key_file.name)
-        cmd = "bash -c 'mkdir -m 664 -p {0}; {1}'".format(out_path,cmd)
+        cmd = "bash -c 'mkdir -m 664 -p {0}; cd {0}; {1}'".format(out_path,cmd)
         volumes = ["/tmp/:/tmp/",
                    "{}:/output/".format(
                     self._config["base_output_dir"])]
@@ -125,7 +125,6 @@ class Udp2Db2Dspsr(Pipeline):
             ipc_mode="host",
             volumes=volumes,
             ulimits=self.ulimits,
-            working_dir=out_path,
             requires_nvidia=True)
 
 
