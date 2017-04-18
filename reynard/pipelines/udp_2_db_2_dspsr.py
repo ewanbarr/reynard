@@ -108,6 +108,7 @@ class Udp2Db2Dspsr(Pipeline):
         out_path = os.path.join("/output/",source_name,tstr)
         host_out_path = os.path.join(self._config["base_output_dir"],
             source_name,tstr)
+        log.debug("Making directories: {}".format(host_out_path))
         try:
             os.makedirs(host_out_path)
         except Exception as error:
