@@ -42,7 +42,7 @@ ENV ARSE 2
 RUN cd soft && \
     git clone https://github.com/ewanbarr/reynard.git && \
     cd reynard && \
-    git checkout json_effcam && \
+    git checkout monitor_pipeline && \
     python setup.py install
 
 ENV PATH ${PATH}:/usr/local/bin
