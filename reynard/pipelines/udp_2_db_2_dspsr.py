@@ -108,17 +108,11 @@ class Udp2Db2Dspsr(Pipeline):
         out_path = os.path.join("/output/",source_name,tstr)
         host_out_path = os.path.join(self._config["base_output_dir"],
             source_name,tstr)
-        log.debug("Making directories: {}".format(host_out_path))
-        try:
-            os.makedirs(host_out_path,mode=0664)
-        except Exception as error:
-            if error.errno != 17:
-                raise error
-            log.debug(str(error))
         cmd = "dspsr {args} -N {source_name} {keyfile}".format(
             args=self._config["dspsr_params"]["args"],
             source_name=source_name,
             keyfile=dada_key_file.name)
+        cmd = "bash -c 'mkdir -m 664 -p {0}; {1}'".format(out_path,cmd)
         volumes = ["/tmp/:/tmp/",
                    "{}:/output/".format(
                     self._config["base_output_dir"])]
@@ -138,11 +132,8 @@ class Udp2Db2Dspsr(Pipeline):
         ############################
         ## Start up PSRCHIVE monitor
         ############################
-        workdir = "/archives/"
-        volumes = [
-            "/home/share:/home/share",
-            "{0}:{1}".format(host_out_path,workdir)
-        ]
+        workdir = out_path
+        volumes.append("/home/share:/home/share")
         out_dir = os.path.join("/home/share/monitors/timing/",source_name,tstr)
         try:
             os.makedirs(out_dir,mode=0664)
