@@ -22,6 +22,7 @@ RUN echo 'deb http://us.archive.ubuntu.com/ubuntu trusty main multiverse' >> /et
     psutil \
     lxml \
     jinja2 \
+    watchdog \
     cmd2 && \
     pip install -e git://github.com/docker/docker-py.git@2.2.0-release#egg=docker-py && \
 
