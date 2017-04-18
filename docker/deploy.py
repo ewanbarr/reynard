@@ -71,5 +71,4 @@ if __name__ == "__main__":
         help='Registry name to tag images with.\nDefault: {0}'.format(REPONAME),
         default=REPONAME, required=False)
     args = parser.parse_args()
-    print args
     main(args.images,args.hosts,args.registry)
