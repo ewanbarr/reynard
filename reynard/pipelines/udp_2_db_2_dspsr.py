@@ -115,7 +115,15 @@ class Udp2Db2Dspsr(Pipeline):
 
         # Make output directories via container call
         log.debug("Creating directories")
-        log.debug("Running: mkdir -m 664 -p {}".format(out_path))
+        #log.debug("Running: mkdir -m 664 -p {}".format(out_path))
+
+        try:
+            os.makedirs(out_path,mode=0664)
+        except Exception as error:
+            if error.errno != 17:
+                raise error
+            log.warning(str(error))
+
         self._docker.run(
             self._config["dspsr_params"]["image"],
             "mkdir -m 664 -p {}".format(out_path),
