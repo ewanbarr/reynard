@@ -108,14 +108,21 @@ class Udp2Db2Dspsr(Pipeline):
         out_path = os.path.join("/output/",source_name,tstr)
         host_out_path = os.path.join(self._config["base_output_dir"],
             source_name,tstr)
+        volumes = ["/tmp/:/tmp/",
+                   "{}:/output/".format(
+                    self._config["base_output_dir"])]
+
+        # Make output directories via container call
+        self._docker.run(
+            self._config["dspsr_params"]["image"],
+            "mkdir -m 664 -p {}".format(out_path),
+            volumes=volumes,
+            remove=True)
+
         cmd = "dspsr {args} -N {source_name} {keyfile}".format(
             args=self._config["dspsr_params"]["args"],
             source_name=source_name,
             keyfile=dada_key_file.name)
-        cmd = "bash -c 'mkdir -m 664 -p {0}; cd {0}; {1}'".format(out_path,cmd)
-        volumes = ["/tmp/:/tmp/",
-                   "{}:/output/".format(
-                    self._config["base_output_dir"])]
         log.debug("Running command: {0}".format(cmd))
         self._docker.run(
             self._config["dspsr_params"]["image"],
@@ -124,6 +131,7 @@ class Udp2Db2Dspsr(Pipeline):
             name="dspsr",
             ipc_mode="host",
             volumes=volumes,
+            working_dir=out_path,
             ulimits=self.ulimits,
             requires_nvidia=True)
 
@@ -149,6 +157,7 @@ class Udp2Db2Dspsr(Pipeline):
             working_dir=workdir,
             tty=True,
             stdin_open=True)
+        psrchive.exec_run("mkdir -p -m 664 {}".format(out_dir))
         self.observer.schedule(ArchiveAdder(psrchive, out_dir), workdir, recursive=False)
         self.observer.start()
 
