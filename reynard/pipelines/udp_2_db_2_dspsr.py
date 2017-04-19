@@ -114,6 +114,8 @@ class Udp2Db2Dspsr(Pipeline):
                     self._config["base_output_dir"])]
 
         # Make output directories via container call
+        log.debug("Creating directories")
+        log.debug("Running: mkdir -m 664 -p {}".format(out_path))
         self._docker.run(
             self._config["dspsr_params"]["image"],
             "mkdir -m 664 -p {}".format(out_path),
@@ -136,19 +138,19 @@ class Udp2Db2Dspsr(Pipeline):
             ulimits=self.ulimits,
             requires_nvidia=True)
 
-
         ############################
         ## Start up PSRCHIVE monitor
         ############################
         workdir = out_path
         volumes.append("/home/share:/home/share")
         out_dir = os.path.join("/home/share/monitors/timing/",source_name,tstr)
+        log.debug("Creating directory: {}".format(out_dir))
         try:
             os.makedirs(out_dir,mode=0664)
         except Exception as error:
             if error.errno != 17:
                 raise error
-            log.debug(str(error))
+            log.warning(str(error))
         psrchive = self._docker.run(
             self._config["psrchive_params"]["image"],
             detach=True,
@@ -158,8 +160,9 @@ class Udp2Db2Dspsr(Pipeline):
             working_dir=workdir,
             tty=True,
             stdin_open=True)
-        psrchive.exec_run("mkdir -p -m 664 {}".format(out_dir))
+        log.debug("Starting up directory observer")
         self.observer.schedule(ArchiveAdder(psrchive, out_dir), workdir, recursive=False)
+        self.observer.start()
 
         ####################
         ## Start up UDP2DB
@@ -185,16 +188,6 @@ class Udp2Db2Dspsr(Pipeline):
             network_mode="host",
             requires_vma=True,
             ulimits=self.ulimits)
-
-        timeout = 6
-        start = time.time()
-        while time.time()-start < timeout:
-            if not os.path.isdir(out_dir):
-                time.sleep(1)
-            else:
-                self.observer.start()
-                break
-
 
     def _stop(self):
         self.observer.stop()
