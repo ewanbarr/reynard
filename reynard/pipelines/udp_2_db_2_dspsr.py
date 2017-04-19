@@ -1,6 +1,7 @@
 import logging
 import tempfile
 import os
+import time
 import shutil
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -159,7 +160,6 @@ class Udp2Db2Dspsr(Pipeline):
             stdin_open=True)
         psrchive.exec_run("mkdir -p -m 664 {}".format(out_dir))
         self.observer.schedule(ArchiveAdder(psrchive, out_dir), workdir, recursive=False)
-        self.observer.start()
 
         ####################
         ## Start up UDP2DB
@@ -185,6 +185,16 @@ class Udp2Db2Dspsr(Pipeline):
             network_mode="host",
             requires_vma=True,
             ulimits=self.ulimits)
+
+        timeout = 6
+        start = time.time()
+        while time.time()-start < timeout:
+            if not os.path.isdir(out_dir):
+                time.sleep(1)
+            else:
+                self.observer.start()
+                break
+
 
     def _stop(self):
         self.observer.stop()
