@@ -148,7 +148,7 @@ class Udp2Db2Dspsr(Pipeline):
             remove=True)
 
         volumes = [
-            "{}:/output/".format(host_out_dir)
+            "{}:/output/".format(host_out_dir),
             "{}:/input/".format(host_out_path)
             ]
 
