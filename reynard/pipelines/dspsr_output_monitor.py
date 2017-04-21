@@ -61,7 +61,7 @@ class DspsrMonitor(Pipeline):
         self._psrchive.reload()
 
     def _start(self, sensors):
-
+        pass
 
 
     def _stop(self):

@@ -1,6 +1,7 @@
 import logging
 import tempfile
 import os
+import time
 import shutil
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -99,19 +100,40 @@ class Udp2Db2Dspsr(Pipeline):
 
         self._set_watchdog("dspsr", callback=self.stop)
         self._set_watchdog("udp2db")
+        self._set_watchdog("psrchive")
 
         ###################
         ## Start up DSPSR
         ###################
         tstr = sensors["timestamp"]
         out_path = os.path.join("/output/",source_name,tstr)
+        host_out_path = os.path.join(self._config["base_output_dir"],
+            source_name,tstr)
+        volumes = ["/tmp/:/tmp/",
+                   "{}:/output/".format(
+                    self._config["base_output_dir"])]
+
+        # Make output directories via container call
+        log.debug("Creating directories")
+        #log.debug("Running: mkdir -m 664 -p {}".format(out_path))
+
+        try:
+            os.makedirs(out_path,mode=0664)
+        except Exception as error:
+            if error.errno != 17:
+                raise error
+            log.warning(str(error))
+
+        self._docker.run(
+            self._config["dspsr_params"]["image"],
+            "mkdir -m 664 -p {}".format(out_path),
+            volumes=volumes,
+            remove=True)
+
         cmd = "dspsr {args} -N {source_name} {keyfile}".format(
             args=self._config["dspsr_params"]["args"],
             source_name=source_name,
             keyfile=dada_key_file.name)
-        volumes = ["/tmp/:/tmp/",
-                   "{}:/output/".format(
-                    self._config["base_output_dir"])]
         log.debug("Running command: {0}".format(cmd))
         self._docker.run(
             self._config["dspsr_params"]["image"],
@@ -120,23 +142,23 @@ class Udp2Db2Dspsr(Pipeline):
             name="dspsr",
             ipc_mode="host",
             volumes=volumes,
-            ulimits=self.ulimits,
             working_dir=out_path,
+            ulimits=self.ulimits,
             requires_nvidia=True)
-
 
         ############################
         ## Start up PSRCHIVE monitor
         ############################
-
+        workdir = out_path
         volumes.append("/home/share:/home/share")
         out_dir = os.path.join("/home/share/monitors/timing/",source_name,tstr)
+        log.debug("Creating directory: {}".format(out_dir))
         try:
-            os.makedirs(out_dir)
+            os.makedirs(out_dir,mode=0664)
         except Exception as error:
             if error.errno != 17:
                 raise error
-        workdir = out_path
+            log.warning(str(error))
         psrchive = self._docker.run(
             self._config["psrchive_params"]["image"],
             detach=True,
@@ -146,6 +168,7 @@ class Udp2Db2Dspsr(Pipeline):
             working_dir=workdir,
             tty=True,
             stdin_open=True)
+        log.debug("Starting up directory observer")
         self.observer.schedule(ArchiveAdder(psrchive, out_dir), workdir, recursive=False)
         self.observer.start()
 
