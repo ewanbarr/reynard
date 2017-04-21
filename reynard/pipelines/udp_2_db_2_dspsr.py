@@ -111,10 +111,11 @@ class Udp2Db2Dspsr(Pipeline):
 
         # Make output directories via container call
         log.debug("Creating directories")
-        log.debug("Running: mkdir -m 664 -p {}".format(out_path))
+        cmd = "Running: mkdir -p {}".format(out_path)
+        log.debug(cmd)
         self._docker.run(
             self._config["dspsr_params"]["image"],
-            "mkdir -m 664 -p {}".format(out_path),
+            cmd,
             volumes=volumes,
             remove=True)
 
@@ -144,7 +145,7 @@ class Udp2Db2Dspsr(Pipeline):
         log.debug("Creating directory: {}".format(out_dir))
         self._docker.run(
             self._config["psrchive_params"]["image"],
-            "mkdir -m 664 -p {}".format(out_dir),
+            "mkdir -p {}".format(out_dir),
             volumes=["{}:/output/".format(self._config["base_monitor_dir"])],
             remove=True)
 
