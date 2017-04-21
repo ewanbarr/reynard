@@ -160,6 +160,7 @@ class Udp2Db2Dspsr(Pipeline):
             detach=True,
             name="psrchive",
             cpuset_cpus="2",
+            working_dir="/dev/shm",
             volumes=volumes)
 
         ####################
