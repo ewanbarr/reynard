@@ -17,6 +17,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     image: reynard
+    user: 50000:50000
+    group_add:
+      - 999
     command: >
       reynard_effcam_server.py --port 5002
       --status_ip=localhost --status_port=5000
@@ -30,16 +33,6 @@ services:
       - 5003:5003
     image: reynard
     command: reynard_ubi_server.py --port 5003 --log_level DEBUG
-  ubn-server:
-    build: .
-    container_name: ubn-server
-    network_mode: host
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /tmp/:/tmp/
-      - /dev/:/host-dev/
-    ports:
-      - 5100:5100
-    image: reynard
-    command: reynard_ubn_server.py --host 134.104.70.90 --port 5100 --log_level DEBUG
-
+    user: 50000:50000
+    group_add:
+      - 999

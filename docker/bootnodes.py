@@ -6,7 +6,8 @@ import json
 IMAGE = "docker.mpifr-bonn.mpg.de:5000/reynard:latest"
 
 def bootnode(hostname,port=5100):
-    stopnode(hostname)
+    nodecmd(hostname,"kill")
+    nodecmd(hostname,"rm")
     ip = socket.gethostbyname(hostname)
     cmd = ("reynard_ubn_server.py --host {ip} "
            "--port {port} --log_level DEBUG").format(
@@ -15,6 +16,10 @@ def bootnode(hostname,port=5100):
               "--name ubn-server --net=host "
               "-v /dev/:/host-dev/ -v /tmp/:/tmp/ "
               "-v /var/run/docker.sock:/var/run/docker.sock "
+              "-v /home/share:/home/share "
+              "-v /media/:/media/ "
+              "-u 50000:50000 "
+              "--group-add 999 "
               "{image} {cmd}").format(image=IMAGE, cmd=cmd,
                                       port=port)
     ssh_cmd = "ssh {0} {1}".format(hostname,docker)
@@ -22,21 +27,15 @@ def bootnode(hostname,port=5100):
     os.system(ssh_cmd)
     print "-"*50
 
-def stopnode(hostname):
-    ssh_cmd = "bash -c 'docker stop ubn-server; docker rm ubn-server'"
+def nodecmd(hostname,cmd):
+    ssh_cmd = "ssh {host} docker {cmd} ubn-server".format(host=hostname,cmd=cmd)
     print ssh_cmd
     os.system(ssh_cmd)
     print "-"*50
 
-def restart(hostname):
-    ssh_cmd = "ssh {0} docker restart ubn-server".format(hostname)
-    print ssh_cmd
-    os.system(ssh_cmd)
-    print "-"*50
-
-def restart_all(nodes):
+def command_all(nodes,cmd):
     for node in nodes:
-      restart(node)
+        nodecmd(node,cmd)
 
 def boot_all(nodes):
     for node in nodes:
@@ -54,8 +53,11 @@ if __name__ == "__main__":
         default=None, required=False)
     parser.add_argument('-r','--restart', action="store_true",
         help='Restart ubn servers on all nodes', required=False)
+    parser.add_argument('-k','--kill', action="store_true",
+                        help='Kill and remove ubn servers on all nodes',
+                        required=False)
     args = parser.parse_args()
-
+    
     if args.config:
         with open(args.config) as f:
             conf = json.load(f)
@@ -66,7 +68,10 @@ if __name__ == "__main__":
         print "Must specify a config file or a list of nodes"
         sys.exit()
     if args.restart:
-        restart_all(nodes)
+        command_all(nodes,"restart")
+    elif args.kill:
+        command_all(nodes,"kill")
+        command_all(nodes,"rm")
     else:
         boot_all(nodes)
 

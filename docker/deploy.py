@@ -8,6 +8,7 @@ HOSTS = ['pacifix0','pacifix1','pacifix2',
 
 IMAGES = ['reynard:latest',
           'dspsr:cuda8.0',
+          'psrchive:latest',
           'psr-capture:asterix',
           'firmware-control:latest',
           'paf-pipeline:latest']
