@@ -101,7 +101,7 @@ class Udp2Db2Dspsr(Pipeline):
         ###################
         ## Start up DSPSR
         ###################
-        tstr = sensors["timestamp"]
+        tstr = sensors["timestamp"].replace(":","-") # to fix docker bug
         out_path = os.path.join("/output/",source_name,tstr)
         host_out_path = os.path.join(self._config["base_output_dir"],
             source_name,tstr)
@@ -137,6 +137,7 @@ class Udp2Db2Dspsr(Pipeline):
         ############################
         ## Start up PSRCHIVE monitor
         ############################
+
 
         host_out_dir = os.path.join(self._config["base_monitor_dir"],"/timing/",source_name,tstr)
         out_dir = os.path.join("/output/timing/",source_name,tstr)
