@@ -20,7 +20,7 @@
                     },
                     "psrchive_params":{
                         "image":"docker.mpifr-bonn.mpg.de:5000/psrchive:latest",
-                        "cmd":"python archive_directory_monitor.py -i /input/ -o /output/"
+                        "cmd":"archive_directory_monitor.py -i /input/ -o /output/"
                     },
                     "dspsr_params":
                     {
