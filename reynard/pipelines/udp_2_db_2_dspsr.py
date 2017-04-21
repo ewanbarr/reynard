@@ -155,7 +155,7 @@ class Udp2Db2Dspsr(Pipeline):
 
         self._docker.run(
             self._config["psrchive_params"]["image"],
-            "exec {}".format(self._config["psrchive_params"]["cmd"]),
+            self._config["psrchive_params"]["cmd"],
             detach=True,
             name="psrchive",
             cpuset_cpus="2",
