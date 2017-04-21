@@ -12,7 +12,7 @@
                 "config":
                 {
                     "base_output_dir":"/media/titan0/reynard_tests/",
-                    "base_monitor_dir":"/home/share/monitor/",
+                    "base_monitor_dir":"/home/share/monitors/",
                     "udp2db_params":
                     {
                         "image":"docker.mpifr-bonn.mpg.de:5000/psr-capture:asterix",
