@@ -140,7 +140,7 @@ class Udp2Db2Dspsr(Pipeline):
         ############################
 
 
-        host_out_dir = os.path.join(self._config["base_monitor_dir"],"/timing/",source_name,tstr)
+        host_out_dir = os.path.join(self._config["base_monitor_dir"],"timing",source_name,tstr)
         out_dir = os.path.join("/output/timing/",source_name,tstr)
         log.debug("Creating directory: {}".format(out_dir))
         self._docker.run(
