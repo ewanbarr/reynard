@@ -181,7 +181,7 @@ class UniversalBackendInterface(AsyncDeviceServer):
     @request()
     @return_reply(Str())
     def request_node_list(self, req):
-        """List all available nodes"""
+        """List all connected nodes"""
         msg = [""]
         for ii, (name, node) in enumerate(self._nodes.items()):
             up = "[online]" if node.is_connected() else "[offline]"

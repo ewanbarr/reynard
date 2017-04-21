@@ -12,13 +12,15 @@
                 "config":
                 {
                     "base_output_dir":"/media/titan0/reynard_tests/",
+                    "base_monitor_dir":"/home/share/monitor/",
                     "udp2db_params":
                     {
                         "image":"docker.mpifr-bonn.mpg.de:5000/psr-capture:asterix",
                         "args":"-v -p 48500 -s 18000",
                     },
                     "psrchive_params":{
-                        "image":"docker.mpifr-bonn.mpg.de:5000/dspsr:cuda8.0"
+                        "image":"docker.mpifr-bonn.mpg.de:5000/psrchive:latest",
+                        "cmd":"python archive_directory_monitor.py -i /input/ -o /output/"
                     },
                     "dspsr_params":
                     {

@@ -309,6 +309,7 @@ class DockerHelper(object):
     def run(self, *args, **kwargs):
         self._update_from_key('requires_nvidia', kwargs, nvidia_config)
         self._update_from_key('requires_vma', kwargs, vma_config)
+        kwargs["user"] = "50000:50000"
         log.debug(
             "Running Docker containers with args: {0}, {1}".format(
                 args, kwargs))

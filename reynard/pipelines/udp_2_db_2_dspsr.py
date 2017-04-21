@@ -3,15 +3,12 @@ import tempfile
 import os
 import time
 import shutil
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 from datetime import datetime
 from docker.errors import APIError
 from reynard.pipelines import Pipeline, reynard_pipeline
 from reynard.dada import render_dada_header, make_dada_key_string
 
 log = logging.getLogger("reynard.DspsrPipeline")
-archive_match = "\d{4}-[0-1]\d-[0-3]\d-[0-2]\d:[0-5]\d:[0-6]\d{1}.ar$"
 
 #
 # NOTE: For this to run properly the host /tmp/
@@ -43,7 +40,6 @@ class Udp2Db2Dspsr(Pipeline):
         self._volumes = ["/tmp/:/tmp/"]
         self._dada_key = None
         self._config = None
-        self.observer = Observer()
 
     def _configure(self, config, sensors):
         self._config = config
@@ -67,7 +63,7 @@ class Udp2Db2Dspsr(Pipeline):
         source_name = sensors["source-name"]
         try:
             source_name = source_name.split("_")[0]
-        except BaseException:
+        except Exception:
             pass
         header["source_name"] = source_name
         header["obs_id"] = "{0}_{1}".format(
@@ -115,15 +111,7 @@ class Udp2Db2Dspsr(Pipeline):
 
         # Make output directories via container call
         log.debug("Creating directories")
-        #log.debug("Running: mkdir -m 664 -p {}".format(out_path))
-
-        try:
-            os.makedirs(out_path,mode=0664)
-        except Exception as error:
-            if error.errno != 17:
-                raise error
-            log.warning(str(error))
-
+        log.debug("Running: mkdir -m 664 -p {}".format(out_path))
         self._docker.run(
             self._config["dspsr_params"]["image"],
             "mkdir -m 664 -p {}".format(out_path),
@@ -149,28 +137,28 @@ class Udp2Db2Dspsr(Pipeline):
         ############################
         ## Start up PSRCHIVE monitor
         ############################
-        workdir = out_path
-        volumes.append("/home/share:/home/share")
-        out_dir = os.path.join("/home/share/monitors/timing/",source_name,tstr)
+
+        host_out_dir = os.path.join(self._config["base_monitor_dir"],"/timing/",source_name,tstr)
+        out_dir = os.path.join("/output/timing/",source_name,tstr)
         log.debug("Creating directory: {}".format(out_dir))
-        try:
-            os.makedirs(out_dir,mode=0664)
-        except Exception as error:
-            if error.errno != 17:
-                raise error
-            log.warning(str(error))
-        psrchive = self._docker.run(
+        self._docker.run(
             self._config["psrchive_params"]["image"],
+            "mkdir -m 664 -p {}".format(out_dir),
+            volumes=["{}:/output/".format(self._config["base_monitor_dir"])],
+            remove=True)
+
+        volumes = [
+            "{}:/output/".format(host_out_dir)
+            "{}:/input/".format(host_out_path)
+            ]
+
+        self._docker.run(
+            self._config["psrchive_params"]["image"],
+            "exec {}".format(self._config["psrchive_params"]["cmd"]),
             detach=True,
             name="psrchive",
             cpuset_cpus="2",
-            volumes=volumes,
-            working_dir=workdir,
-            tty=True,
-            stdin_open=True)
-        log.debug("Starting up directory observer")
-        self.observer.schedule(ArchiveAdder(psrchive, out_dir), workdir, recursive=False)
-        self.observer.start()
+            volumes=volumes)
 
         ####################
         ## Start up UDP2DB
@@ -198,8 +186,6 @@ class Udp2Db2Dspsr(Pipeline):
             ulimits=self.ulimits)
 
     def _stop(self):
-        self.observer.stop()
-        self.observer.join()
         for name in ["dspsr", "udp2db", "psrchive"]:
             container = self._docker.get(name)
             try:
@@ -223,37 +209,6 @@ class Udp2Db2Dspsr(Pipeline):
         log.debug("Running command: {0}".format(cmd))
         self._docker.run("psr-capture", cmd, remove=True, ipc_mode="host")
 
-
-class ArchiveAdder(FileSystemEventHandler):
-    def __init__(self,psrchive,output_dir):
-        super(ArchiveAdder,self).__init__()
-        self.psrchive = psrchive
-        self.output_dir = output_dir
-        self.first_file = True
-
-    def fscrunch(self,fname):
-        self.psrchive.exec_run("pam -F -e Ft {}".format(fname))
-        return fname.replace(".ar",".Ft")
-
-    def process(self,fname):
-        fscrunch_fname = self.fscrunch(fname)
-        if self.first_file:
-            shutil.copy2(fscrunch_fname,"sum.Ft")
-            shutil.copy2(fname,"sum.fT")
-            self.first_file = False
-        else:
-            self.psrchive.exec_run("psradd -T -inplace sum.fT {}".format(fname))
-            self.psrchive.exec_run("psradd -inplace sum.tF {}".format(fscrunch_fname))
-        shutil.copy2("sum.Ft",self.output_dir)
-        shutil.copy2("sum.fT",self.output_dir)
-
-    def on_created(self, event):
-        try:
-            fname = event.src_path
-            if fname.endswith(".ar"):
-                self.process(fname)
-        except Exception as error:
-            log.error(error)
 
 
 
