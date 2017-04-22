@@ -1,0 +1,38 @@
+version: '2'
+services:
+  logspout:
+    image: gliderlabs/logspout:latest
+    container_name: logspout
+    network_mode: host
+    environment:
+      - SYSLOG_HOSTNAME={{host}}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: syslog://{{logging_address}}
+  event-monitor:
+    image: docker.mpifr-bonn.mpg.de:5000/event-monitor:latest
+    container_name: event-monitor
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    user: 50000:50000
+    group_add:
+      - 999
+    depends_on:
+      - logspout
+  ubn-server:
+    image: docker.mpifr-bonn.mpg.de:5000/reynard:latest
+    ports:
+      - 5100:5100
+    network_mode: host
+    volumes:
+      - /dev/:/host-dev/
+      - /tmp/:/tmp/
+      - /var/run/docker.sock:/var/run/docker.sock
+    user: 50000:50000
+    group_add:
+      - 999
+    depends_on:
+      - logspout
+    command: >
+      reynard_ubn_server.py --host {{host}}
+      --port {{port}} --log_level DEBUG
