@@ -1,6 +1,8 @@
 import os
 import sys
 import tempfile
+import json
+import jinja2
 
 TEMPLATE_FILE = "docker-compose-node.template"
 
