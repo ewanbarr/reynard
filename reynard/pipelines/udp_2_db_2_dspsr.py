@@ -167,9 +167,10 @@ class Udp2Db2Dspsr(Pipeline):
         ## Start up UDP2DB
         ####################
         cmd = ("LD_PRELOAD=libvma.so taskset -c 1 udp2db "
-               "-k {key} {args} -H {headerfile}").format(
+               "-k {key} {args} -s {tobs} -H {headerfile}").format(
             key=self._dada_key,
             args=self._config["udp2db_params"]["args"],
+            tobs=sensors["time-remaining"],
             headerfile=dada_header_file.name)
         cmd = 'bash -c "{cmd}"'.format(cmd=cmd)
         log.debug("Running command: {0}".format(cmd))
