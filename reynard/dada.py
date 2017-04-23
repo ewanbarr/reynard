@@ -92,6 +92,12 @@ def dada_defaults():
 
 
 def render_dada_header(overrides):
-    defaults = dada_defaults()
+    defaults = DADA_DEFAULTS.copy()
     defaults.update(overrides)
+    bytes_per_second = defaults["bandwidth"] * 1e6 * \
+        defaults["nchan"] * 2 * defaults["npol"] * defaults["nbit"] / 8
+    defaults.update({
+        "bytes_per_second": bytes_per_second,
+        "utc_start": datetime.utcnow().strftime('%Y-%m-%d-%H:%M:%S.%f')
+    })
     return jinja2.Template(DADA_HEADER).render(**defaults)
