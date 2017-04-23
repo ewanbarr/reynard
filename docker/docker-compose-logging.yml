@@ -1,0 +1,29 @@
+version: '2'
+services:
+  rsyslog:
+    image: voxxit/rsyslog
+    container_name: rsyslog
+    ports:
+      - 134.104.70.90:5514:514/udp
+  logspout:
+    image: gliderlabs/logspout:latest
+    container_name: logspout
+    network_mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: syslog://134.104.70.90:5514
+    environment:
+      - SYSLOG_HOSTNAME="pacifix0"
+    depends_on:
+      - rsyslog
+  event-monitor:
+    image: docker.mpifr-bonn.mpg.de:5000/event-monitor:latest
+    container_name: event-monitor
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    user: 50000:50000
+    group_add:
+      - 999
+    depends_on:
+      - rsyslog
+      - logspout

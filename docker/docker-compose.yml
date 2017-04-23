@@ -8,6 +8,17 @@ services:
       - 5000:5000
     image: reynard
     command: reynard_eff_status_server.py -p 5000
+  ubi-server:
+    image: docker.mpifr-bonn.mpg.de:5000/reynard:latest
+    container_name: ubi-server
+    network_mode: host
+    ports:
+      - 5003:5003
+    image: reynard
+    command: reynard_ubi_server.py --port 5003 --log_level DEBUG
+    user: 50000:50000
+    group_add:
+      - 999
   effcam-server:
     image: docker.mpifr-bonn.mpg.de:5000/reynard:latest
     container_name: effcam-server
@@ -25,34 +36,7 @@ services:
       --status_ip=localhost --status_port=5000
       --backend ubi:localhost:5003
       --log_level DEBUG
-  ubi-server:
-    image: docker.mpifr-bonn.mpg.de:5000/reynard:latest
-    container_name: ubi-server
-    network_mode: host
-    ports:
-      - 5003:5003
-    image: reynard
-    command: reynard_ubi_server.py --port 5003 --log_level DEBUG
-    user: 50000:50000
-    group_add:
-      - 999
-  event-monitor:
-    build: event-monitor/
-    container_name: event-monitor
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    user: 50000:50000
-    group_add:
-      - 999
-  rsyslog:
-    image: voxxit/rsyslog
-    container_name: rsyslog
-    ports:
-      - 127.0.0.1:5514:514/udp
-  logspout:
-    image: gliderlabs/logspout:latest
-    container_name: logspout
-    network_mode: host
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    command: syslog://127.0.0.1:5514
+    depends_on:
+      - status-server
+      - ubi-server
+
