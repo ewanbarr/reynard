@@ -16,7 +16,7 @@
                     "udp2db_params":
                     {
                         "image":"docker.mpifr-bonn.mpg.de:5000/psr-capture:asterix",
-                        "args":"-v -p 48500 -s 18000",
+                        "args":"-v -p 48500",
                     },
                     "psrchive_params":{
                         "image":"docker.mpifr-bonn.mpg.de:5000/psrchive:latest",

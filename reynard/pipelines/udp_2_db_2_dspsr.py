@@ -37,7 +37,7 @@ class Udp2Db2Dspsr(Pipeline):
 
     def __init__(self):
         super(Udp2Db2Dspsr, self).__init__()
-        self._volumes = ["/tmp/:/tmp/"]
+        self._volumes = ["/tmp/:/scratch/"]
         self._dada_key = None
         self._config = None
 
@@ -73,7 +73,7 @@ class Udp2Db2Dspsr(Pipeline):
             mode="w",
             prefix="reynard_dada_header_",
             suffix=".txt",
-            dir="/tmp/",
+            dir="/scratch/",
             delete=False)
         log.debug(
             "Writing dada header file to {0}".format(
@@ -85,7 +85,7 @@ class Udp2Db2Dspsr(Pipeline):
             mode="w",
             prefix="reynard_dada_keyfile_",
             suffix=".key",
-            dir="/tmp",
+            dir="/scratch/",
             delete=False)
         log.debug("Writing dada key file to {0}".format(dada_key_file.name))
         key_string = make_dada_key_string(self._dada_key)
@@ -105,7 +105,7 @@ class Udp2Db2Dspsr(Pipeline):
         out_path = os.path.join("/output/",source_name,tstr)
         host_out_path = os.path.join(self._config["base_output_dir"],
             source_name,tstr)
-        volumes = ["/tmp/:/tmp/",
+        volumes = ["/tmp/:/scratch/",
                    "{}:/output/".format(
                     self._config["base_output_dir"])]
 

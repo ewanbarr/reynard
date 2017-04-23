@@ -28,7 +28,7 @@ transient search.
 class PafFrbPipeline(Pipeline):
     def __init__(self):
         super(PafFrbPipeline, self).__init__()
-        self._volumes = ["/tmp/:/tmp/"]
+        self._volumes = ["/tmp/:/scratch/"]
         self._dada_key = None
         self._config = None
 
@@ -41,7 +41,7 @@ class PafFrbPipeline(Pipeline):
             mode="w",
             prefix="reynard_paf_config_",
             suffix=".txt",
-            dir="/tmp/",
+            dir="/scratch/",
             delete=False)
         log.debug(
             "Writing paf config file to {0}".format(
