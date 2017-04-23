@@ -21,6 +21,7 @@ services:
       - logspout
   ubn-server:
     image: docker.mpifr-bonn.mpg.de:5000/reynard:latest
+    container_name: ubn-server
     ports:
       - 5100:5100
     network_mode: host
