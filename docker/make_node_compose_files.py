@@ -40,5 +40,5 @@ if __name__ == "__main__":
         nodes = args.nodes
 
     for node in nodes:
-        make_compose_file(node,port=5100,args.logging_address)
+        make_compose_file(node,port=5100,logging_address=args.logging_address)
 
