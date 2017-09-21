@@ -34,7 +34,9 @@ RUN echo 'deb http://us.archive.ubuntu.com/ubuntu trusty main multiverse' >> /et
     git checkout tags/v0.6.1 && \
     python setup.py install
 
-ENV ARSE 3
+# Dummy env variable
+# Changing it forces rebuild from this point
+ENV ARSE 4
 
 #COPY reynard/ /soft/reynard
 
@@ -42,7 +44,7 @@ ENV ARSE 3
 RUN cd soft && \
     git clone https://github.com/ewanbarr/reynard.git && \
     cd reynard && \
-    git checkout monitor_pipeline && \
+    git checkout tuse_interface && \
     python setup.py install
 
 ENV PATH ${PATH}:/usr/local/bin
