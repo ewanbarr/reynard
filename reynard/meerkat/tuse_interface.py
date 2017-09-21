@@ -210,7 +210,7 @@ class TuseMasterController(AsyncDeviceServer):
 
         self._shit_giggles = Sensor.float(
             "shit-giggles",
-            description="Shit-giggleness level from 0 to 1."
+            description="Shit-giggleness level from 0 to 1.",
             default=0.5,
             initial_status=0.5
             )
