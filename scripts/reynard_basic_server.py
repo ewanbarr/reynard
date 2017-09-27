@@ -44,7 +44,7 @@ if __name__ == "__main__":
     elif opts.server_type == "EffCAMServer":
         server = EffCAMServer(opts.host, opts.port)
     else:
-        raise Exception("Unknown pipeline type")
+        raise Exception("Unknown server type")
     signal.signal(signal.SIGINT, lambda sig, frame: ioloop.add_callback_from_signal(
         on_shutdown, ioloop, server))
     def start_and_display():

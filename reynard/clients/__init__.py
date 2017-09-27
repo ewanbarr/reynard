@@ -1,1 +1,1 @@
-from .stream_client import StreamClient
+from .stream_client import StreamClient, XTermStream

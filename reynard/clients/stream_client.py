@@ -2,6 +2,7 @@ import sys
 from tempfile import NamedTemporaryFile
 from subprocess import Popen
 from katcp import DeviceClient
+from reynard.utils.katcp import decode_katcp_message
 
 class XTermStream(object):
     def __init__(self):
@@ -12,8 +13,9 @@ class XTermStream(object):
         self.tempfile.file.write(msg)
         self.tempfile.file.flush()
 
-    def __del__(self):
+    def close(self):
         self.xterm.terminate()
+        self.tempfile.close()
 
 
 class StreamClient(DeviceClient):

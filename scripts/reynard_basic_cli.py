@@ -4,9 +4,10 @@ import sys
 import traceback
 import katcp
 import readline
+import atexit
 from optparse import OptionParser
 from cmd2 import Cmd
-from reynard.clients import StreamClient
+from reynard.clients import StreamClient, XTermStream
 
 logging.basicConfig(level=logging.INFO,
                     stream=sys.stderr,
@@ -27,7 +28,7 @@ class KatcpCli(Cmd):
     """
     Cmd.shortcuts.update({'?': 'katcp'})
     Cmd.allow_cli_args = False
-    def __init__(self,host,port,stream,*args,**kwargs):
+    def __init__(self, host, port, stream, *args, **kwargs):
         """
         @brief  Instantiate new KatcpCli instance
 
@@ -35,13 +36,14 @@ class KatcpCli(Cmd):
         """
         self.host = host
         self.port = port
+        self.stream = stream
         self.katcp_parser = katcp.MessageParser()
         self.start_client()
         Cmd.__init__(self, *args, **kwargs)
 
     def start_client(self):
         log.info("Client connecting to port {self.host}:{self.port}".format(**locals()))
-        self.client = StreamClient(self.host, self.port)
+        self.client = StreamClient(self.host, self.port, self.stream)
         self.client.start()
         self.prompt = "(katcp CLI {self.host}:{self.port}): ".format(**locals())
 
@@ -93,13 +95,28 @@ if __name__ == "__main__":
                       help='attach to server HOST (default="" - localhost)')
     parser.add_option('-p', '--port', dest='port', type=int, default=1235, metavar='N',
                       help='attach to server port N (default=1235)')
+    parser.add_option('-x', '--xterm', dest='xterm', action="store_true",
+                      help='Stream output to a spawned xterm')
     (opts, args) = parser.parse_args()
     sys.argv = sys.argv[:1]
     log.info("Ctrl-C to terminate.")
+    if opts.xterm:
+        try:
+            stream = XTermStream()
+        except:
+            log.warning("Failed to open XTermStream, falling back on stdout")
+            stream = sys.stdout
+            opts.xterm = False
+    else:
+        stream = sys.stdout
+
     try:
-        app = KatcpCli(opts.host,opts.port)
+        app = KatcpCli(opts.host,opts.port,stream)
         app.cmdloop()
     except Exception as error:
         log.exception("Error from CLI")
     finally:
         app.stop_client()
+    if opts.xterm:
+        stream.close()
+

@@ -9,7 +9,7 @@ from katcp.resource_client import KATCPClientResource
 from reynard.utils.katcp import pack_dict, unpack_dict
 from reynard.effelsberg import config as config_manager
 from reynard.effelsberg.config import InvalidConfiguration
-from reynard.receiver import get_receiver, InvalidReceiver
+from reynard.effelsberg.receivers import get_receiver, InvalidReceiver
 
 log = logging.getLogger('reynard.effelsberg.cam_server')
 lock = Lock()
