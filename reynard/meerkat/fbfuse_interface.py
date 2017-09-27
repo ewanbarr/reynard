@@ -39,8 +39,8 @@ class Node(object):
 
 class NodeManager(object):
     """Wrapper class for managing node
-        allocation and deallocation to subarray/products
-        """
+    allocation and deallocation to subarray/products
+    """
     def __init__(self, nodes):
         """
         @brief   Construct a new instance
@@ -131,7 +131,7 @@ class NodeManager(object):
                    @endcode
                    Note: This format is subject to change.
 
-        @return     NodeManager object
+        @return    NodeManager object
         """
         node_confs = json.loads(conf)
         log.debug("Building NodeManager from JSON:\n{}".format(node_confs))
@@ -197,14 +197,14 @@ class FbfMasterController(AsyncDeviceServer):
             description="Health status of FBFUSE",
             params=self.DEVICE_STATUSES,
             default="ok",
-            initial_status="ok")
+            initial_status=Sensor.UNKNOWN)
         self.add_sensor(self._device_status)
 
         self._local_time_synced = Sensor.boolean(
             "local-time-synced",
             description="Indicates FBF is NTP syncronised.",
             default=True,
-            initial_status=False)
+            initial_status=Sensor.UNKNOWN)
         self.add_sensor(self._local_time_synced)
 
     @request(Str(), Str(), Int(), Str(), Str())
@@ -471,6 +471,36 @@ class FbfProductController(object):
         """
         @brief      Configure the nodes for processing
         """
+        config = {}
+        config['backend'] = 'FBFUSE'
+        config["nodes"] = []
+        for node in nodes:
+            node_config = {}
+            node_config['host'] = node.hostname
+            node_config['port'] = node.port
+            node_config['pipelines'] = []
+            pipeline = {}
+            pipeline['name'] = 'beamformer-0'
+            pipeline['pipeline_name'] = 'BeanfarmerPipeline'
+            pipeline_config = {}
+            pipeline_config['antennas'] = self._antennas
+            pipeline_config['nchans'] = self._n_channels
+            pipeline_config['products'] = [{"name":"beam0","offset":(0.0,0.0)}]
+            pipeline['config'] = pipeline_config
+            node_config['pipelines'].append(pipeline)
+
+    def configure_coherent_fb_beams(self, positions, antennas, tscrunch, fscrunch, tracked=True, rfi_excision=None):
+        #Positions have to be given in units of the offset so that they
+        #are valid for all observations in a set of observations.
+        pass
+
+    def configure_coherent_raw_beams(self, positions, antennas, tracked=True, rfi_excision=None):
+        pass
+
+    def configure_incoherent_fb_beam(self, antennas, rfi_excision=None):
+        pass
+
+    def configure_antenna_fb_beams(self, antennas, rfi_excision=None):
         pass
 
     def deconfigure(self):

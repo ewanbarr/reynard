@@ -309,6 +309,10 @@ class DockerHelper(object):
     def run(self, *args, **kwargs):
         self._update_from_key('requires_nvidia', kwargs, nvidia_config)
         self._update_from_key('requires_vma', kwargs, vma_config)
+
+        #Note: This is hardcoded for standard mpifr setups
+        #needs to be changed to match setup on target systems
+        #should be done via config file
         kwargs["user"] = "50000:50000"
         log.debug(
             "Running Docker containers with args: {0}, {1}".format(
