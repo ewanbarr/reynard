@@ -9,7 +9,7 @@ from tornado.gen import coroutine
 from tornado.ioloop import PeriodicCallback
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str
-from reynard.utils import pack_dict
+from reynard.utils.katcp import pack_dict
 from reynard.effelsberg.servers import EFF_JSON_CONFIG
 
 TYPE_CONVERTER = {

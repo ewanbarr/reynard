@@ -3,7 +3,8 @@ from tornado.gen import coroutine
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Str
 from reynard.pipelines import PIPELINE_STATES
-from reynard.utils import doc_inherit, unpack_dict, pack_dict
+from reynard.utils import doc_inherit
+from reynard.utils.katcp import unpack_dict, pack_dict
 
 log = logging.getLogger("reynard.pipeline_server")
 

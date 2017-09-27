@@ -5,7 +5,7 @@ from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str
 from katcp.resource_client import KATCPClientResource
 from reynard.monitors import DiskMonitor, CpuMonitor, MemoryMonitor
-from reynard.utils import unpack_dict, pack_dict
+from reynard.utils.katcp import unpack_dict, pack_dict
 from reynard.pipelines import PIPELINE_REGISTRY
 from reynard.servers import PipelineServer
 

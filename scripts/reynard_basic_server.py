@@ -4,14 +4,10 @@ import tornado
 import logging
 from optparse import OptionParser
 from reynard.servers import UniversalBackendNode,UniversalBackendInterface,PipelineServer
-from reynard.effelsberg.servers import StatusServer,EffCAMServer, JsonStatusServer
+from reynard.effelsberg.servers import EffCAMServer, JsonStatusServer
 from reynard.pipelines import PIPELINE_REGISTRY
 
 log = logging.getLogger("reynard.basic_server")
-
-class Config(object):
-    VOLUMES = [("root","/"),]
-    NODES = [("localhost",1235),]
 
 @tornado.gen.coroutine
 def on_shutdown(ioloop, server):
@@ -38,13 +34,11 @@ if __name__ == "__main__":
     log.info("Starting {opts.server_type} instance".format(opts=opts))
     ioloop = tornado.ioloop.IOLoop.current()
     if opts.server_type == "UniversalBackendNode":
-        server = UniversalBackendNode(opts.host, opts.port, Config())
+        server = UniversalBackendNode(opts.host, opts.port)
     elif opts.server_type == "UniversalBackendInterface":
-        server = UniversalBackendInterface(opts.host, opts.port, Config())
+        server = UniversalBackendInterface(opts.host, opts.port)
     elif opts.server_type == "PipelineServer":
         server = PipelineServer(opts.host, opts.port, PIPELINE_REGISTRY["TestPipeline"]["class"])
-    elif opts.server_type == "StatusServer":
-        server = StatusServer(opts.host, opts.port)
     elif opts.server_type == "JsonStatusServer":
         server = JsonStatusServer(opts.host, opts.port)
     elif opts.server_type == "EffCAMServer":

@@ -5,7 +5,7 @@ from katcp import AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete
 from katcp.resource_client import KATCPClientResource
 from katcp.ioloop_manager import with_relative_timeout
-from reynard.utils import unpack_dict, pack_dict
+from reynard.utils.katcp import unpack_dict, pack_dict
 
 log = logging.getLogger("reynard.ubi_server")
 

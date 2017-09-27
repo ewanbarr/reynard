@@ -6,7 +6,7 @@ import katcp
 import readline
 from optparse import OptionParser
 from cmd2 import Cmd
-from reynard.utils import StreamClient
+from reynard.clients import StreamClient
 
 logging.basicConfig(level=logging.INFO,
                     stream=sys.stderr,
@@ -27,7 +27,7 @@ class KatcpCli(Cmd):
     """
     Cmd.shortcuts.update({'?': 'katcp'})
     Cmd.allow_cli_args = False
-    def __init__(self,host,port,*args,**kwargs):
+    def __init__(self,host,port,stream,*args,**kwargs):
         """
         @brief  Instantiate new KatcpCli instance
 

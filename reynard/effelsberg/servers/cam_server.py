@@ -6,7 +6,7 @@ from tornado.locks import Lock
 from katcp import Sensor, AsyncDeviceServer, AsyncReply
 from katcp.kattypes import request, return_reply, Int, Str, Discrete, Address
 from katcp.resource_client import KATCPClientResource
-from reynard.utils import pack_dict, unpack_dict
+from reynard.utils.katcp import pack_dict, unpack_dict
 from reynard.effelsberg import config as config_manager
 from reynard.effelsberg.config import InvalidConfiguration
 from reynard.receiver import get_receiver, InvalidReceiver

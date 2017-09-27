@@ -9,7 +9,6 @@ from reynard.servers import UniversalBackendNode
 
 log = logging.getLogger("reynard.ubn_server")
 
-
 @tornado.gen.coroutine
 def on_shutdown(ioloop, server):
     log.info("Shutting down server")

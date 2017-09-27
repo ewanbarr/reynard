@@ -1,6 +1,6 @@
 import jinja2
 from tornado.gen import coroutine, Return
-from reynard.dada import dada_defaults, DADA_HEADER
+from reynard.utils.dada import dada_defaults, DADA_HEADER
 
 
 @coroutine

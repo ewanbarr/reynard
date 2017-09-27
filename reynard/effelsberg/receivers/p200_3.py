@@ -1,6 +1,6 @@
 import logging
 import docker
-from reynard.receiver import reynard_receiver, Receiver
+from .receiver import reynard_receiver, Receiver
 from reynard.effelsberg.config import get_node_by_ethernet_interface
 
 log = logging.getLogger("reynard.effelsberg.receivers.p200-3")
