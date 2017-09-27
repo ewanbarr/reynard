@@ -6,7 +6,7 @@ import shutil
 from datetime import datetime
 from docker.errors import APIError
 from reynard.pipelines import Pipeline, reynard_pipeline
-from reynard.utisl.dada import render_dada_header, make_dada_key_string
+from reynard.utils.dada import render_dada_header, make_dada_key_string
 
 log = logging.getLogger("reynard.DspsrPipeline")
 
