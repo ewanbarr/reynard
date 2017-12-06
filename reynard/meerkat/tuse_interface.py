@@ -218,7 +218,7 @@ class TuseMasterController(AsyncDeviceServer):
 
     @request(Str(), Str(), Str(), Str())
     @return_reply()
-    def request_configure(self, req, product_id, streams_json, proxy_name, noidea):
+    def request_configure(self, req, product_id, antennas_csv, streams_json, proxy_name):
         """
         @brief      Configure FBFUSE to receive and process data from a subarray
 
@@ -294,9 +294,6 @@ class TuseMasterController(AsyncDeviceServer):
         # of antennas that allows one to determine the number of nodes to run. Currently we
         # just assume one antennas worth of data per NIC on our servers, so two antennas per
         # node.
-
-        print product_id, streams_json, proxy_name, noidea
-
         streams = json.loads(streams_json)
         product = streams
         self._products[product_id] = product
