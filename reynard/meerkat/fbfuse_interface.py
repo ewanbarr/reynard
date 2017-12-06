@@ -197,14 +197,14 @@ class FbfMasterController(AsyncDeviceServer):
             description="Health status of FBFUSE",
             params=self.DEVICE_STATUSES,
             default="ok",
-            initial_status="ok")
+            initial_status=Sensor.NOMINAL)
         self.add_sensor(self._device_status)
 
         self._local_time_synced = Sensor.boolean(
             "local-time-synced",
             description="Indicates FBF is NTP syncronised.",
             default=True,
-            initial_status=False)
+            initial_status=Sensor.NOMINAL)
         self.add_sensor(self._local_time_synced)
 
     @request(Str(), Str(), Int(), Str(), Str())

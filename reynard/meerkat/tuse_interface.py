@@ -198,21 +198,21 @@ class TuseMasterController(AsyncDeviceServer):
             description="Health status of FBFUSE",
             params=self.DEVICE_STATUSES,
             default="ok",
-            initial_status="ok")
+            initial_status=Sensor.NOMINAL)
         self.add_sensor(self._device_status)
 
         self._local_time_synced = Sensor.boolean(
             "local-time-synced",
             description="Indicates FBF is NTP syncronised.",
             default=True,
-            initial_status=False)
+            initial_status=Sensor.NOMINAL)
         self.add_sensor(self._local_time_synced)
 
         self._shit_giggles = Sensor.float(
             "shit-giggles",
             description="Shit-giggleness level from 0 to 1.",
             default=0.5,
-            initial_status=0.5
+            initial_status=Sensor.NOMINAL
             )
         self.add_sensor(self._shit_giggles)
 
