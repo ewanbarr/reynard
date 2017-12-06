@@ -295,6 +295,8 @@ class TuseMasterController(AsyncDeviceServer):
         # just assume one antennas worth of data per NIC on our servers, so two antennas per
         # node.
 
+        print product_id, streams_json, proxy_name, noidea
+
         streams = json.loads(streams_json)
         product = streams
         self._products[product_id] = product
