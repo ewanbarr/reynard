@@ -216,9 +216,9 @@ class TuseMasterController(AsyncDeviceServer):
             )
         self.add_sensor(self._shit_giggles)
 
-    @request(Str(), Str())
+    @request(Str(), Str(), Str())
     @return_reply()
-    def request_configure(self, req, product_id, streams_json):
+    def request_configure(self, req, product_id, streams_json, proxy_name):
         """
         @brief      Configure FBFUSE to receive and process data from a subarray
 
