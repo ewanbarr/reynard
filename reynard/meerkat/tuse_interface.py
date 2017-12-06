@@ -216,9 +216,9 @@ class TuseMasterController(AsyncDeviceServer):
             )
         self.add_sensor(self._shit_giggles)
 
-    @request(Str(), Str(), Int(), Str(), Str())
+    @request(Str(), Str(), Str())
     @return_reply()
-    def request_configure(self, req, product_id, antennas_csv, n_channels, streams_json, proxy_name):
+    def request_configure(self, req, product_id, streams_json, proxy_name):
         """
         @brief      Configure FBFUSE to receive and process data from a subarray
 
@@ -294,25 +294,9 @@ class TuseMasterController(AsyncDeviceServer):
         # of antennas that allows one to determine the number of nodes to run. Currently we
         # just assume one antennas worth of data per NIC on our servers, so two antennas per
         # node.
-        antennas = antennas_csv.split(",")
-        nantennas = len(antennas)
-        if not is_power_of_two(nantennas):
-            log.warning("Number of antennas was not a power of two. Rounding up to next power of two for resource allocation.")
-        required_nodes = next_power_of_two(nantennas)//2
-        try:
-            nodes = self._node_pool.allocate(required_nodes)
-        except Exception as error:
-            return ("fail", str(error))
+
         streams = json.loads(streams_json)
-        product = TuseProductController(product_id, antennas, n_channels, streams, proxy_name, nodes)
-        try:
-            product.start()
-            product.configure()
-        except Exception as error:
-            self._node_pool.deallocate(nodes)
-            return ("fail","Error on product configure: {}".format(str(error)))
-        #finally if everything is configured successfully we add the product
-        #the dictionary of configured products
+        product = streams
         self._products[product_id] = product
         return ("ok",)
 
