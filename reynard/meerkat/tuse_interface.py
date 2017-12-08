@@ -468,12 +468,13 @@ class TuseProductController(object):
         """
         @brief      Configure the nodes for processing
         """
+        log.debug("Searching for FBFUSE sensors")
         name = yield portal_client.sensor_subarray_lookup(
             component="fbfuse",
             sensor="device_status",
             return_katcp_name=True  # Returns something like fbfuse_1.device_status
             )
-        print(name)
+        log.debug("Found KATCP sensor: {}".format(name))
 
     def deconfigure(self):
         """
