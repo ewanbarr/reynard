@@ -297,7 +297,7 @@ class TuseMasterController(AsyncDeviceServer):
         # just assume one antennas worth of data per NIC on our servers, so two antennas per
         # node.
         streams = json.loads(streams_json)
-        product = TuseProductController(product_id, streams, proxy_names)
+        product = TuseProductController(product_id, streams, proxy_name)
 
         try:
             product.start()
@@ -444,7 +444,7 @@ class TuseProductController(object):
         self._capturing = False
         self._client = None
         self._server = None
-        
+
         # Through this we can retrieve sensor values from other proxies
         self._portal_client = None
 
