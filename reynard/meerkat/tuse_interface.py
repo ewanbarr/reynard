@@ -461,7 +461,7 @@ class TuseProductController(object):
         # Through this we can retrieve sensor values from other proxies
         self._portal_client = KATPortalClient(
             self._streams["cam.http"]["camdata"],
-            update_on_callback=None,
+            on_update_callback=None,
             logger=log)
 
     def configure(self):
