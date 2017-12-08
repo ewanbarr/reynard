@@ -289,6 +289,8 @@ class FbfMasterController(AsyncDeviceServer):
         nantennas = len(antennas)
         if not is_power_of_two(nantennas):
             log.warning("Number of antennas was not a power of two. Rounding up to next power of two for resource allocation.")
+        if nantennas < 4:
+          nantennas = 4;
         required_nodes = next_power_of_two(nantennas)//2
         try:
             nodes = self._node_pool.allocate(required_nodes)
