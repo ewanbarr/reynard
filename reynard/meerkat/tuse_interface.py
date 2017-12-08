@@ -7,6 +7,7 @@ from optparse import OptionParser
 from katcp import Sensor, AsyncDeviceServer
 from katcp.kattypes import request, return_reply, Int, Str, Discrete
 from reynard.servers.ubi_server import UniversalBackendInterface
+from katportalclient import KATPortalClient
 
 log = logging.getLogger("reynard.tuse_interface")
 
@@ -167,9 +168,10 @@ class TuseMasterController(AsyncDeviceServer):
         """
         super(TuseMasterController, self).__init__(ip,port)
         self._node_pool = None
-        self._products = {}
+        self._products = {} # product controllers
         self._dummy = dummy
-        self._node_pool = NodeManager.from_json(nodes_json)
+        #self._node_pool = NodeManager.from_json(nodes_json)
+
 
     def start(self):
         """Start TuseMasterController server"""
@@ -295,7 +297,15 @@ class TuseMasterController(AsyncDeviceServer):
         # just assume one antennas worth of data per NIC on our servers, so two antennas per
         # node.
         streams = json.loads(streams_json)
-        product = streams
+        product = TuseProductController(product_id, streams, proxy_names)
+
+        try:
+            product.start()
+            product.configure()
+        except Exception as error:
+            errmsg = "Error on TuseProductController start/configure: {!s}".format(error)
+            return ("fail", errmsg)
+
         self._products[product_id] = product
         return ("ok",)
 
@@ -415,13 +425,11 @@ class TuseProductController(object):
     specific to MeerKAT into a general configuration and pipeline deployment tool as is done
     for Effelsberg.
     """
-    def __init__(self, product_id, antennas, n_channels, streams, proxy_name, nodes):
+    def __init__(self, product_id, streams, proxy_name):
         """
         @brief      Construct new instance
 
         @param      product_id        The name of the product
-
-        @param      antennas_csv      A list of antenna names
 
         @param      n_channels        The integer number of frequency channels provided by the CBF.
 
@@ -432,38 +440,42 @@ class TuseProductController(object):
         self._n_channels = n_channels
         self._streams = streams
         self._proxy_name = proxy_name
-        self._nodes = nodes
+        #self._nodes = nodes
         self._capturing = False
         self._client = None
         self._server = None
+        
+        # Through this we can retrieve sensor values from other proxies
+        self._portal_client = None
 
-    @property
-    def nodes(self):
-        return self._nodes
+    #@property
+    #def nodes(self):
+    #    return self._nodes
 
     @property
     def capturing(self):
         return self._capturing
 
     def start(self):
-        name = "{}_ubi_client".format(self._product_id)
-        log.debug("Starting UBI server for product {}".format(self._product_id))
-        self._server = UniversalBackendInterface("127.0.0.1",0) # 0 = random available port above 32k
-        self._server.start()
         """
-        self._client = KATCPClientResource(dict(
-            name=name,
-            address=self._server.bind_address(),
-            controlled=True))
+        @brief FIXME
         """
-        for node in self._nodes:
-            self._server._add_node(node.hostname,node.hostname,node.port)
+        # Through this we can retrieve sensor values from other proxies
+        self._portal_client = KATPortalClient(
+            self._streams["cam.http"]["camdata"],
+            update_on_callback=None,
+            logger=log)
 
     def configure(self):
         """
         @brief      Configure the nodes for processing
         """
-        pass
+        name = yield portal_client.sensor_subarray_lookup(
+            component="fbfuse",
+            sensor="device_status",
+            return_katcp_name=True  # Returns something like fbfuse_1.device_status
+            )
+        print(name)
 
     def deconfigure(self):
         """
