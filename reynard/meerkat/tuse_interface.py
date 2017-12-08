@@ -334,7 +334,6 @@ class TuseMasterController(AsyncDeviceServer):
             product.deconfigure()
         except Exception as error:
             return ("fail", str(error))
-        self._node_pool.deallocate(product.nodes)
         del self._products[product_id]
         return ("ok",)
 
