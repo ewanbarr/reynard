@@ -418,6 +418,14 @@ class TuseMasterController(AsyncDeviceServer):
         return ("ok",len(self._products))
 
 
+
+
+
+
+def update_callback(items):
+    print json.dumps(items, indent=4)
+
+
 class TuseProductController(object):
     """
     Wrapper class for an FBFUSE product. Objects of this type create a UBI server instance and
@@ -454,11 +462,18 @@ class TuseProductController(object):
         # Through this we can retrieve sensor values from other proxies
         self._portal_client = KATPortalClient(
             self._streams["cam.http"]["camdata"],
-            on_update_callback=None,
+            on_update_callback=update_callback,
             logger=log)
 
     @coroutine
     def _sensor_lookup(self, component, sensor):
+        """
+        @brief      Get the exact flattened name of a sensor
+
+        @param      component       component name
+
+        @param      sensor      sensor name
+        """
         log.debug("Searching for sensor \'{}\' in component \'{}\'".format(component, sensor))
         name = yield self._portal_client.sensor_subarray_lookup(
             component,
@@ -480,12 +495,25 @@ class TuseProductController(object):
         """
         # This will return fbfuse_N_device_status where N
         # is the subarray index
-        name = yield self._sensor_lookup("fbfuse", "device-status")
+        sname = yield self._sensor_lookup("fbfuse", "device-status")
 
-        log.debug("Fetching details of sensor: {}".format(name))
-        details = yield self._portal_client.sensor_detail(name)
+        log.debug("Fetching details of sensor: {}".format(sname))
+        details = yield self._portal_client.sensor_detail(sname)
         for key, val in details.items():
             log.debug("    {}: {}".format(key, val))
+
+        yield self._portal_client.connect()
+
+        # Subscribe to sensor fbfuse_N_device_status
+        namespace = "namespace_{!s}".format(uuid.uuid4())
+        result = yield self._portal_client.subscribe(namespace)
+        log.debug("Result of subscription to namespace '{}': {}".format(namespace, result))
+
+        # Set sampling strategy
+        result = yield self._portal_client.set_sampling_strategies(
+            namespace, sname, 'period 3.0'
+            )
+        log.debug("Set sampling strategies result: {}".format(result))
 
     def deconfigure(self):
         """
