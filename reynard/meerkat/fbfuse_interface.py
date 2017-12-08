@@ -298,7 +298,7 @@ class FbfMasterController(AsyncDeviceServer):
         except Exception as error:
             return ("fail", str(error))
         streams = json.loads(streams_json)
-        product = FbfProductController(product_id, antennas, n_channels, streams, proxy_name, nodes)
+        product = FbfProductController(self, product_id, antennas, n_channels, streams, proxy_name, nodes)
         try:
             product.start()
             product.configure()
