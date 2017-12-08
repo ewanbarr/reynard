@@ -457,7 +457,7 @@ class TuseProductController(object):
             controlled=True))
         """
         for node in self._nodes:
-            self._server._add_node(node['host'],node['host'],node['port'])
+            self._server._add_node(node.hostname,node.hostname,node.port)
 
     def configure(self):
         """
