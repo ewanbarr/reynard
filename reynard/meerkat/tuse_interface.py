@@ -553,7 +553,7 @@ def main():
         help='Path to file containing list of available nodes')
     (opts, args) = parser.parse_args()
     FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
-    logger = logging.getLogger('reynard')
+    logger = logging.getLogger('reynard.tuse_interface')
     logging.basicConfig(format=FORMAT)
     logger.setLevel(opts.log_level.upper())
     ioloop = tornado.ioloop.IOLoop.current()
@@ -571,6 +571,7 @@ def main():
 
     def start_and_display():
         server.start()
+        log.debug("DEBUG statement!!!!!21223124")
         log.info("Listening at {0}, Ctrl-C to terminate server".format(server.bind_address))
     ioloop.add_callback(start_and_display)
     ioloop.start()
