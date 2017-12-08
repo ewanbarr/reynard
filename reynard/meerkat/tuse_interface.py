@@ -1,7 +1,7 @@
 import logging
 import json
 import tornado
-from tornado.gen import coroutine
+from tornado.gen import coroutine, Return
 import signal
 from threading import Lock
 from optparse import OptionParser
@@ -418,6 +418,14 @@ class TuseMasterController(AsyncDeviceServer):
         return ("ok",len(self._products))
 
 
+
+
+
+
+def update_callback(items):
+    print json.dumps(items, indent=4)
+
+
 class TuseProductController(object):
     """
     Wrapper class for an FBFUSE product. Objects of this type create a UBI server instance and
@@ -438,17 +446,10 @@ class TuseProductController(object):
         self._product_id = product_id
         self._streams = streams
         self._proxy_name = proxy_name
-        #self._nodes = nodes
         self._capturing = False
         self._client = None
         self._server = None
-
-        # Through this we can retrieve sensor values from other proxies
         self._portal_client = None
-
-    #@property
-    #def nodes(self):
-    #    return self._nodes
 
     @property
     def capturing(self):
@@ -456,27 +457,63 @@ class TuseProductController(object):
 
     def start(self):
         """
-        @brief FIXME
+        @brief      FIXME
         """
         # Through this we can retrieve sensor values from other proxies
         self._portal_client = KATPortalClient(
             self._streams["cam.http"]["camdata"],
-            on_update_callback=None,
+            on_update_callback=update_callback,
             logger=log)
 
+    @coroutine
+    def _sensor_lookup(self, component, sensor):
+        """
+        @brief      Get the exact flattened name of a sensor
+
+        @param      component       component name
+
+        @param      sensor      sensor name
+        """
+        log.debug("Searching for sensor \'{}\' in component \'{}\'".format(component, sensor))
+        name = yield self._portal_client.sensor_subarray_lookup(
+            component,
+            sensor,
+            return_katcp_name=False # flattened name with underscores only
+            )
+        log.debug("Found sensor: {}".format(name))
+        # This is how return statements work within tornado coroutines:
+        # raise a special Return object
+        # note that we have to yield on that return value, e.g:
+        # name = yield self._sensor_lookup(...)
+        raise Return(name)
+
+    # This needs to be a coroutine because it contains yield statement(s)
     @coroutine
     def configure(self):
         """
         @brief      Configure the nodes for processing
         """
-        log.debug("Searching for FBFUSE sensors")
-        name = yield self._portal_client.sensor_subarray_lookup(
-            component="fbfuse",
-            sensor="device_status",
-            return_katcp_name=True  # Returns something like fbfuse_1.device_status
-            )
-        log.debug("Found KATCP sensor: {}".format(name))
+        # This will return fbfuse_N_device_status where N
+        # is the subarray index
+        sname = yield self._sensor_lookup("fbfuse", "device-status")
 
+        log.debug("Fetching details of sensor: {}".format(sname))
+        details = yield self._portal_client.sensor_detail(sname)
+        for key, val in details.items():
+            log.debug("    {}: {}".format(key, val))
+
+        yield self._portal_client.connect()
+
+        # Subscribe to sensor fbfuse_N_device_status
+        namespace = "namespace_{!s}".format(uuid.uuid4())
+        result = yield self._portal_client.subscribe(namespace)
+        log.debug("Result of subscription to namespace '{}': {}".format(namespace, result))
+
+        # Set sampling strategy
+        result = yield self._portal_client.set_sampling_strategies(
+            namespace, sname, 'period 3.0'
+            )
+        log.debug("Set sampling strategies result: {}".format(result))
 
     def deconfigure(self):
         """
