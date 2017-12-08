@@ -4,7 +4,7 @@ import tornado
 import signal
 from threading import Lock
 from optparse import OptionParser
-from katcp import Sensor, AsyncDeviceServer
+from katcp import Sensor, AsyncDeviceServer, Message
 from katcp.kattypes import request, return_reply, Int, Str, Discrete
 from reynard.servers.ubi_server import UniversalBackendInterface
 
@@ -478,7 +478,7 @@ class FbfProductController(object):
             default=",".join([node.hostname for node in self._nodes]),
             initial_status=Sensor.NOMINAL)
         self._parent.add_sensor(self._nodes_list)
-
+        self._parent.mass_inform(Message.inform('interface-changed'))
 
     def configure(self):
         """
