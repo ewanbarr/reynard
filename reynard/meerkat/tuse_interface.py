@@ -436,8 +436,6 @@ class TuseProductController(object):
         @param      streams           A dictionary containing config keys and values describing the streams.
         """
         self._product_id = product_id
-        self._antennas = antennas
-        self._n_channels = n_channels
         self._streams = streams
         self._proxy_name = proxy_name
         #self._nodes = nodes
