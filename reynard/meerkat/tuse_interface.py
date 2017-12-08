@@ -457,25 +457,31 @@ class TuseProductController(object):
             on_update_callback=None,
             logger=log)
 
+    @coroutine
+    def _sensor_lookup(self, component, sensor):
+        log.debug("Searching for sensor \'{}\' in component \'{}\'".format(component, sensor))
+        name = self._portal_client.sensor_subarray_lookup(
+            component,
+            sensor,
+            return_katcp_name=False # flattened name with underscores only
+            )
+        log.debug("Found sensor: {}".format(name))
+        yield name
+
     # This needs to be a coroutine because it contains yield statement(s)
     @coroutine
     def configure(self):
         """
         @brief      Configure the nodes for processing
         """
-        log.debug("Searching for FBFUSE sensor: device-status")
-        name = yield self._portal_client.sensor_subarray_lookup(
-            component="fbfuse",
-            sensor="device-status",
-            return_katcp_name=True  # Returns something like fbfuse_1.device_status
-            )
-        log.debug("Found KATCP sensor: {}".format(name))
+        # This will return fbfuse_N_device_status where N
+        # is the subarray index
+        name = self._sensor_lookup("fbfuse", "device-status")
 
-        log.debug("Fetching details of FBFUSE sensor: device-status")
+        log.debug("Fetching details of sensor: {}".format(name))
         details = yield self._portal_client.sensor_detail(name)
         for key, val in details.items():
             log.debug("    {}: {}".format(key, val))
-
 
     def deconfigure(self):
         """
