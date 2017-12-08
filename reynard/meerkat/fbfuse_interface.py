@@ -8,6 +8,7 @@ from katcp import Sensor, AsyncDeviceServer
 from katcp.kattypes import request, return_reply, Int, Str, Discrete
 from reynard.servers.ubi_server import UniversalBackendInterface
 
+
 log = logging.getLogger("reynard.fbfuse_interface")
 
 lock = Lock()
@@ -425,7 +426,7 @@ class FbfProductController(object):
     specific to MeerKAT into a general configuration and pipeline deployment tool as is done
     for Effelsberg.
     """
-    def __init__(self, product_id, antennas, n_channels, streams, proxy_name, nodes):
+    def __init__(self, parent, product_id, antennas, n_channels, streams, proxy_name, nodes):
         """
         @brief      Construct new instance
 
@@ -437,6 +438,7 @@ class FbfProductController(object):
 
         @param      streams           A dictionary containing config keys and values describing the streams.
         """
+        self._parent = parent
         self._product_id = product_id
         self._antennas = antennas
         self._n_channels = n_channels
@@ -446,6 +448,7 @@ class FbfProductController(object):
         self._capturing = False
         self._client = None
         self._server = None
+        self._portal_client = None
 
     @property
     def nodes(self):
@@ -468,6 +471,14 @@ class FbfProductController(object):
         """
         for node in self._nodes:
             self._server._add_node(node.hostname,node.hostname,node.port)
+
+        self._nodes_list = Sensor.string(
+            "{}-node-list".format(self._product_id),
+            description="Nodes associated with the current subarray",
+            default=",".join([node.hostname for node in self._nodes]),
+            initial_status=Sensor.NOMINAL)
+        self._parent.add_sensor(self._nodes_list)
+
 
     def configure(self):
         """
@@ -552,7 +563,7 @@ def main():
         help='Path to file containing list of available nodes')
     (opts, args) = parser.parse_args()
     FORMAT = "[ %(levelname)s - %(asctime)s - %(filename)s:%(lineno)s] %(message)s"
-    logger = logging.getLogger('reynard')
+    logger = logging.getLogger('reynard.fbfuse_interface')
     logging.basicConfig(format=FORMAT)
     logger.setLevel(opts.log_level.upper())
     ioloop = tornado.ioloop.IOLoop.current()
