@@ -1,6 +1,7 @@
 import logging
 import json
 import tornado
+from tornado.gen import coroutine
 import signal
 from threading import Lock
 from optparse import OptionParser
@@ -464,6 +465,7 @@ class TuseProductController(object):
             on_update_callback=None,
             logger=log)
 
+    @coroutine
     def configure(self):
         """
         @brief      Configure the nodes for processing
@@ -475,6 +477,7 @@ class TuseProductController(object):
             return_katcp_name=True  # Returns something like fbfuse_1.device_status
             )
         log.debug("Found KATCP sensor: {}".format(name))
+
 
     def deconfigure(self):
         """
@@ -571,7 +574,7 @@ def main():
 
     def start_and_display():
         server.start()
-        log.debug("DEBUG statement!!!!!21223124")
+        logger.debug("DEBUG statement!!!!!21223124")
         log.info("Listening at {0}, Ctrl-C to terminate server".format(server.bind_address))
     ioloop.add_callback(start_and_display)
     ioloop.start()
