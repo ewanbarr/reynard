@@ -438,17 +438,10 @@ class TuseProductController(object):
         self._product_id = product_id
         self._streams = streams
         self._proxy_name = proxy_name
-        #self._nodes = nodes
         self._capturing = False
         self._client = None
         self._server = None
-
-        # Through this we can retrieve sensor values from other proxies
         self._portal_client = None
-
-    #@property
-    #def nodes(self):
-    #    return self._nodes
 
     @property
     def capturing(self):
@@ -456,7 +449,7 @@ class TuseProductController(object):
 
     def start(self):
         """
-        @brief FIXME
+        @brief      FIXME
         """
         # Through this we can retrieve sensor values from other proxies
         self._portal_client = KATPortalClient(
@@ -464,18 +457,24 @@ class TuseProductController(object):
             on_update_callback=None,
             logger=log)
 
+    # This needs to be a coroutine because it contains yield statement(s)
     @coroutine
     def configure(self):
         """
         @brief      Configure the nodes for processing
         """
-        log.debug("Searching for FBFUSE sensors")
+        log.debug("Searching for FBFUSE sensor: device-status")
         name = yield self._portal_client.sensor_subarray_lookup(
             component="fbfuse",
-            sensor="device_status",
+            sensor="device-status",
             return_katcp_name=True  # Returns something like fbfuse_1.device_status
             )
         log.debug("Found KATCP sensor: {}".format(name))
+
+        log.debug("Fetching details of FBFUSE sensor: device-status")
+        details = yield self._portal_client.sensor_detail(name)
+        for key, val in details.items():
+            log.debug("    {}: {}".format(key, val))
 
 
     def deconfigure(self):
