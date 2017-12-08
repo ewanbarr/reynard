@@ -1,7 +1,7 @@
 import logging
 import json
 import tornado
-from tornado.gen import coroutine
+from tornado.gen import coroutine, Return
 import signal
 from threading import Lock
 from optparse import OptionParser
@@ -460,13 +460,17 @@ class TuseProductController(object):
     @coroutine
     def _sensor_lookup(self, component, sensor):
         log.debug("Searching for sensor \'{}\' in component \'{}\'".format(component, sensor))
-        name = self._portal_client.sensor_subarray_lookup(
+        name = yield self._portal_client.sensor_subarray_lookup(
             component,
             sensor,
             return_katcp_name=False # flattened name with underscores only
             )
         log.debug("Found sensor: {}".format(name))
-        yield name
+        # This is how return statements work within tornado coroutines:
+        # raise a special Return object
+        # note that we have to yield on that return value, e.g:
+        # name = yield self._sensor_lookup(...)
+        raise Return(name)
 
     # This needs to be a coroutine because it contains yield statement(s)
     @coroutine
@@ -476,7 +480,7 @@ class TuseProductController(object):
         """
         # This will return fbfuse_N_device_status where N
         # is the subarray index
-        name = self._sensor_lookup("fbfuse", "device-status")
+        name = yield self._sensor_lookup("fbfuse", "device-status")
 
         log.debug("Fetching details of sensor: {}".format(name))
         details = yield self._portal_client.sensor_detail(name)
