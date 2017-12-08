@@ -574,7 +574,6 @@ def main():
 
     def start_and_display():
         server.start()
-        logger.debug("DEBUG statement!!!!!21223124")
         log.info("Listening at {0}, Ctrl-C to terminate server".format(server.bind_address))
     ioloop.add_callback(start_and_display)
     ioloop.start()
