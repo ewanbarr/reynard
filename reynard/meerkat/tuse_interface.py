@@ -422,8 +422,20 @@ class TuseMasterController(AsyncDeviceServer):
 
 
 
-def update_callback(items):
-    print json.dumps(items, indent=4)
+# def update_callback(items):
+#     # "items" is a dictionary of that form:
+#     # {
+#     #     "msg_pattern": "namespace_0d36fc36-7a42-4c0d-8f6f-f06c78547849:*",
+#     #     "msg_channel": "namespace_0d36fc36-7a42-4c0d-8f6f-f06c78547849:fbfuse_1_device_status",
+#     #     "msg_data": {
+#     #         "status": "nominal",
+#     #         "timestamp": 1512748032.71123,
+#     #         "value": "ok",
+#     #         "name": "fbfuse_1_device_status",
+#     #         "received_timestamp": 1512748067.365858
+#     #     }
+#     # }
+#     print json.dumps(items, indent=4)
 
 
 class TuseProductController(object):
@@ -444,12 +456,15 @@ class TuseProductController(object):
         @param      streams           A dictionary containing config keys and values describing the streams.
         """
         self._product_id = product_id
+        self._fbfuse_product_id = None
+        self._fbfuse_proxy_name = None
         self._streams = streams
         self._proxy_name = proxy_name
         self._capturing = False
         self._client = None
         self._server = None
         self._portal_client = None
+        self._namespace = "namespace_{!s}".format(uuid.uuid4())
 
     @property
     def capturing(self):
@@ -462,8 +477,15 @@ class TuseProductController(object):
         # Through this we can retrieve sensor values from other proxies
         self._portal_client = KATPortalClient(
             self._streams["cam.http"]["camdata"],
-            on_update_callback=update_callback,
+            on_update_callback=self._update_callback,
             logger=log)
+
+    def _update_callback(self, items):
+        log.debug(json.dumps(items, indent=4))
+        if items["msg_data"]["name"] == self._fbfuse_proxy_name + "_product_id":
+            self._fbfuse_product_id = items["msg_data"]["value"]
+            self._portal_client.unsubscribe(self._namespace)
+
 
     @coroutine
     def _sensor_lookup(self, component, sensor):
@@ -493,27 +515,43 @@ class TuseProductController(object):
         """
         @brief      Configure the nodes for processing
         """
-        # This will return fbfuse_N_device_status where N
-        # is the subarray index
-        sname = yield self._sensor_lookup("fbfuse", "device-status")
-
-        log.debug("Fetching details of sensor: {}".format(sname))
-        details = yield self._portal_client.sensor_detail(sname)
-        for key, val in details.items():
-            log.debug("    {}: {}".format(key, val))
+        # "This is just the way it behaves man" (E.Barr 08/12/17)
+        # This returns the proxy name of FBFUSE (often, but not necessarily
+        # the same as ours)
+        # A proxy-name looks like: fbfuse_1
+        self._fbfuse_proxy_name = yield self._sensor_lookup("fbfuse", None)
 
         yield self._portal_client.connect()
 
-        # Subscribe to sensor fbfuse_N_device_status
-        namespace = "namespace_{!s}".format(uuid.uuid4())
-        result = yield self._portal_client.subscribe(namespace)
-        log.debug("Result of subscription to namespace '{}': {}".format(namespace, result))
+        # Subscribe to sensor fbfuse_N_proxy_name
+        result = yield self._portal_client.subscribe(self._namespace)
+        log.debug("Result of subscription to namespace '{}': {}".format(self._namespace, result))
 
-        # Set sampling strategy
+        # Prepare to query for: self._fbfuse_proxy_name
         result = yield self._portal_client.set_sampling_strategies(
-            namespace, sname, 'period 3.0'
+            namespace, self._fbfuse_proxy_name, 'event'
             )
-        log.debug("Set sampling strategies result: {}".format(result))
+
+
+
+
+        # log.debug("Fetching details of sensor: {}".format(sname))
+        # details = yield self._portal_client.sensor_detail(sname)
+        # for key, val in details.items():
+        #     log.debug("    {}: {}".format(key, val))
+        #
+        # yield self._portal_client.connect()
+        #
+        # # Subscribe to sensor fbfuse_N_device_status
+        # namespace = "namespace_{!s}".format(uuid.uuid4())
+        # result = yield self._portal_client.subscribe(namespace)
+        # log.debug("Result of subscription to namespace '{}': {}".format(namespace, result))
+        #
+        # # Set sampling strategy
+        # result = yield self._portal_client.set_sampling_strategies(
+        #     namespace, sname, 'period 3.0'
+        #     )
+        # log.debug("Set sampling strategies result: {}".format(result))
 
     def deconfigure(self):
         """
