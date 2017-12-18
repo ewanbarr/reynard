@@ -1,6 +1,7 @@
 import logging
 import json
 import tornado
+import uuid
 from tornado.gen import coroutine, Return
 import signal
 from threading import Lock
@@ -438,6 +439,34 @@ class TuseMasterController(AsyncDeviceServer):
 #     print json.dumps(items, indent=4)
 
 
+class CallbackMessageData(dict):
+    """
+    Convenience class to parse and manipulate dictionaries passed as the argument of the
+    callback function of a KATPortalClient instance.
+
+    Example: if "items" is the argument to the callback function, then we can write
+        mdata = CallbackMessageData(items)
+        mdata.name  # sensor name
+        mdata.value # sensor value
+    """
+    def __init__(self, items):
+        super(CallbackMessageData, self).__init__(items["msg_data"])
+
+    def __getattr__(self, name):
+        return self[name]
+
+
+
+def test_callback(items):
+    log.debug("CALLBACK")
+    log.debug(json.dumps(items, indent=4))
+    mdata = CallbackMessageData(items)
+    log.debug("name: {}".format(mdata.name))
+    log.debug("value: {}".format(mdata.value))
+
+
+
+
 class TuseProductController(object):
     """
     Wrapper class for an FBFUSE product. Objects of this type create a UBI server instance and
@@ -477,24 +506,26 @@ class TuseProductController(object):
         # Through this we can retrieve sensor values from other proxies
         self._portal_client = KATPortalClient(
             self._streams["cam.http"]["camdata"],
-            on_update_callback=self._update_callback,
+            on_update_callback=test_callback,
             logger=log)
 
     def _update_callback(self, items):
+        log.debug("CALLBACK")
         log.debug(json.dumps(items, indent=4))
-        if items["msg_data"]["name"] == self._fbfuse_proxy_name + "_product_id":
-            self._fbfuse_product_id = items["msg_data"]["value"]
-            self._portal_client.unsubscribe(self._namespace)
+        #if items["msg_data"]["name"] == self._fbfuse_proxy_name + "subarray_product_id":
+        #    self._fbfuse_product_id = items["msg_data"]["value"]
+        #    self._portal_client.unsubscribe(self._namespace)
 
 
     @coroutine
     def _sensor_lookup(self, component, sensor):
         """
-        @brief      Get the exact flattened name of a sensor
+        @brief      Get the exact flattened name of a sensor from a search pattern
 
-        @param      component       component name
+        @param      component   component name
 
-        @param      sensor      sensor name
+        @param      sensor      sensor name search pattern, if empty or None, looks
+                                up the component instead.
         """
         log.debug("Searching for sensor \'{}\' in component \'{}\'".format(component, sensor))
         name = yield self._portal_client.sensor_subarray_lookup(
@@ -504,7 +535,7 @@ class TuseProductController(object):
             )
         log.debug("Found sensor: {}".format(name))
         # This is how return statements work within tornado coroutines:
-        # raise a special Return object
+        # by raising a special Return object
         # note that we have to yield on that return value, e.g:
         # name = yield self._sensor_lookup(...)
         raise Return(name)
@@ -518,28 +549,27 @@ class TuseProductController(object):
         # "This is just the way it behaves man" (E.Barr 08/12/17)
         # This returns the proxy name of FBFUSE (often, but not necessarily
         # the same as ours)
-        # A proxy-name looks like: fbfuse_1
+        # A proxy name looks like: fbfuse_1
         self._fbfuse_proxy_name = yield self._sensor_lookup("fbfuse", None)
 
         yield self._portal_client.connect()
 
-        # Subscribe to sensor fbfuse_N_proxy_name
-        result = yield self._portal_client.subscribe(self._namespace)
+        # Subscribe to sensors starting by "fbfuse_{PROXY_NAME}", e.g. "fbfuse_1"
+        result = yield self._portal_client.subscribe(self._namespace, self._fbfuse_proxy_name + '*')
         log.debug("Result of subscription to namespace '{}': {}".format(self._namespace, result))
 
         # Prepare to query for: self._fbfuse_proxy_name
+        sname = self._fbfuse_proxy_name + "_device_status"
         result = yield self._portal_client.set_sampling_strategies(
-            namespace, self._fbfuse_proxy_name, 'event'
-            )
+            self._namespace, sname, "event")
+        log.debug("Set sampling strategies result: {}".format(result))
 
 
+        #log.debug("Fetching details of sensor: {}".format(sname))
+        #details = yield self._portal_client.sensor_detail(sname)
+        #for key, val in details.items():
+        #    log.debug("    {}: {}".format(key, val))
 
-
-        # log.debug("Fetching details of sensor: {}".format(sname))
-        # details = yield self._portal_client.sensor_detail(sname)
-        # for key, val in details.items():
-        #     log.debug("    {}: {}".format(key, val))
-        #
         # yield self._portal_client.connect()
         #
         # # Subscribe to sensor fbfuse_N_device_status
