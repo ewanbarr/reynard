@@ -1,0 +1,39 @@
+{
+    "backend":"effpaf",
+    "nodes": [
+    {% for node in nodes%}
+    {
+        "host": "{{node['host']}}",
+        "port": {{node['port']}},
+        "pipelines":
+        [
+            {% for numa in range(2)%}
+            {
+                "name":"NUMA{{numa}}",
+                "pipeline_name":"PafFrbPipeline",
+                "config":
+                {
+                    "image":"docker.mpifr-bonn.mpg.de:5000/paf-test:latest",
+                    "output_path":"/beegfs/PAFJAN/{{node}}/",
+                    "config_file_params":
+                    [
+                        "IPS {{node['nics'][0]}},{{node['nics'][1]}}",
+                        "GPUIDS 0,1",
+                        "NOBEAMS 1",
+                        "NOGPUS 1",
+                        "NACCUMULATE 256",
+                        "NOSTREAMS 1",
+                        "OUTBITS 32",
+                    ],
+                    "numa":{{numa}},
+                    "tobs":600
+                }
+                {% if not loop.last %},{% endif %}
+            }
+        ]
+    }
+    {% if not loop.last %},{% endif %}
+    {% endfor %}
+
+    ]
+}

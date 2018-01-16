@@ -49,7 +49,6 @@ class PafFrbPipeline(Pipeline):
         for line in self._config["config_file_params"]:
             paf_config_file.write(line+"\n")
         paf_config_file.close()
-
         self._set_watchdog("paf", persistent=True)
 
         ulimits = [{
@@ -58,8 +57,14 @@ class PafFrbPipeline(Pipeline):
             "Soft": -1
         }]
 
-        cmd = "pafrb --config {config} -o /output/ -v".format(
-            config=paf_config_file.name)
+        cmd = ("numactl --membind {numa} --cpunodebind {numa}"
+               " /pafinder/bin/pafinder --config {config}"
+               " -o /output/ -r {tobs} -v --numa {numa}"
+               ).format(
+               numa=self._config['numa'],
+               tobs=self._config['tobs'],
+               config=paf_config_file.name
+               )
         log.debug("Running command: {0}".format(cmd))
         self._docker.run(self._config["image"], cmd,
                          detach=True, name="paf",

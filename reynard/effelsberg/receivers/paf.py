@@ -2,7 +2,7 @@ from reynard.receiver import reynard_receiver, Receiver
 from reynard.effelsberg.config import get_node_by_ethernet_interface
 
 
-@reynard_receiver("effelsberg", "P217-3")
+@reynard_receiver("effelsberg", "PAF")
 class Paf(Receiver):
     def __init__(self):
         pass
@@ -16,7 +16,7 @@ class Paf(Receiver):
         @return     The capture nodes.
         """
 
-        return [get_node_by_ethernet_interface("effelsberg","10.17.0.1")]
+        return [get_nodes("effelsberg")]
 
     def configure(self):
         pass
