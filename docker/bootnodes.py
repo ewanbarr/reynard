@@ -4,8 +4,8 @@ import socket
 import json
 
 def node_cmd(hostname,cmd):
-    if cmd = "up":
-        cmd = "-d up"
+    if cmd == "up":
+        cmd = "up -d"
     ssh_cmd = "ssh {0} 'cd /home/share/reynard/{0} && docker-compose {1}'".format(
         hostname,cmd)
     print ssh_cmd

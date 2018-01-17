@@ -11,7 +11,7 @@ IMAGES = ['reynard:latest',
           'psrchive:latest',
           'psr-capture:asterix',
           'firmware-control:latest',
-          'paf-pipeline:latest']
+          'paf-test:latest']
 
 REPONAME = "docker.mpifr-bonn.mpg.de:5000"
 

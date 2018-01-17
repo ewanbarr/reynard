@@ -9,6 +9,7 @@ from reynard.gui import ParameterController
 
 KEYS = [
     "project",
+    "receiver",
     "scannum",
     "subscannum",
     "numsubscans",

@@ -23,8 +23,9 @@ RUN echo 'deb http://us.archive.ubuntu.com/ubuntu trusty main multiverse' >> /et
     lxml \
     jinja2 \
     watchdog \
+    tornado==4.5.3 \
     cmd2 && \
-    pip install -e git://github.com/docker/docker-py.git@2.2.0-release#egg=docker-py && \
+    pip install -e git://github.com/docker/docker-py.git@2.7.0#egg=docker-py && \
 
 # KATCP-v0.6.1
     mkdir soft && \
@@ -34,7 +35,7 @@ RUN echo 'deb http://us.archive.ubuntu.com/ubuntu trusty main multiverse' >> /et
     git checkout tags/v0.6.1 && \
     python setup.py install
 
-ENV ARSE 3
+ENV ARSE 5
 
 #COPY reynard/ /soft/reynard
 
@@ -42,7 +43,7 @@ ENV ARSE 3
 RUN cd soft && \
     git clone https://github.com/ewanbarr/reynard.git && \
     cd reynard && \
-    git checkout monitor_pipeline && \
+    git checkout dev && \
     python setup.py install
 
 ENV PATH ${PATH}:/usr/local/bin

@@ -1,5 +1,5 @@
 from reynard.receiver import reynard_receiver, Receiver
-from reynard.effelsberg.config import get_node_by_ethernet_interface
+from reynard.effelsberg.config import get_nodes
 
 
 @reynard_receiver("effelsberg", "PAF")
