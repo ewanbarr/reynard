@@ -6,7 +6,6 @@ services:
     network_mode: host
     ports:
       - 5000:5000
-    image: reynard
     command: reynard_eff_status_server.py -p 5000
   ubi-server:
     image: docker.mpifr-bonn.mpg.de:5000/reynard:latest
@@ -14,7 +13,6 @@ services:
     network_mode: host
     ports:
       - 5003:5003
-    image: reynard
     command: reynard_ubi_server.py --port 5003 --log_level DEBUG
     user: 50000:50000
     group_add:
@@ -27,7 +25,6 @@ services:
       - 5002:5002
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    image: reynard
     user: 50000:50000
     group_add:
       - 999

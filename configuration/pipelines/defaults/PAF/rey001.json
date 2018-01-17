@@ -29,6 +29,7 @@
                     "tobs":600
                 }
                 {% if not loop.last %},{% endif %}
+		{% endfor %}
             }
         ]
     }
