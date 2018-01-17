@@ -23,17 +23,15 @@
                         "NOGPUS 1",
                         "NACCUMULATE 256",
                         "NOSTREAMS 1",
-                        "OUTBITS 32",
+                        "OUTBITS 32"
                     ],
                     "numa":{{numa}},
                     "tobs":600
-                }
-                {% if not loop.last %},{% endif %}
+                }{% if not loop.last %},{% endif %}
 		{% endfor %}
             }
         ]
-    }
-    {% if not loop.last %},{% endif %}
+    }{% if not loop.last %},{% endif %}
     {% endfor %}
 
     ]
