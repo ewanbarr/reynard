@@ -14,7 +14,7 @@
                 "config":
                 {
                     "image":"docker.mpifr-bonn.mpg.de:5000/paf-test:latest",
-                    "output_path":"/beegfs/PAFJAN/{{node}}/",
+                    "output_path":"/beegfs/PAFJAN/{{node['hostname']}}/",
                     "config_file_params":
                     [
                         "IPS {{node['nics'][0]}},{{node['nics'][1]}}",

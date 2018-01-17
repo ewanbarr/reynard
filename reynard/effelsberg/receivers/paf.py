@@ -16,8 +16,8 @@ class Paf(Receiver):
         @return     The capture nodes.
         """
 
-        return [get_nodes("effelsberg")]
-
+        return get_nodes("effelsberg")
+    
     def configure(self):
         pass
 
