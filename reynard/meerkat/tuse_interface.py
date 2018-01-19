@@ -11,6 +11,8 @@ from katcp.kattypes import request, return_reply, Int, Str, Discrete
 from reynard.servers.ubi_server import UniversalBackendInterface
 from katportalclient import KATPortalClient
 
+from callback_handler import TuseCallbackHandler
+
 log = logging.getLogger("reynard.tuse_interface")
 
 lock = Lock()
@@ -212,6 +214,7 @@ class TuseMasterController(AsyncDeviceServer):
             initial_status=Sensor.NOMINAL)
         self.add_sensor(self._local_time_synced)
 
+        # NOTE: just a test sensor, for teh lulz
         self._shit_giggles = Sensor.float(
             "shit-giggles",
             description="Shit-giggleness level from 0 to 1.",
@@ -222,6 +225,7 @@ class TuseMasterController(AsyncDeviceServer):
 
     @request(Str(), Str(), Str())
     @return_reply()
+    @coroutine
     def request_configure(self, req, product_id, streams_json, proxy_name):
         """
         @brief      Configure FBFUSE to receive and process data from a subarray
@@ -291,7 +295,9 @@ class TuseMasterController(AsyncDeviceServer):
         """
         # Test if product_id already exists
         if product_id in self._products:
-            return ("fail", "FBF already has a configured product with ID: {}".format(product_id))
+            #return ("fail", "FBF already has a configured product with ID: {}".format(product_id))
+            raise Return( ("fail", "FBF already has a configured product with ID: {}".format(product_id)) )
+
         # Determine number of nodes required based on number of antennas in subarray
         # Note this is a poor way of handling this that may be updated later. In theory
         # there is a throughput measure as a function of bandwidth, polarisations and number
@@ -302,14 +308,16 @@ class TuseMasterController(AsyncDeviceServer):
         product = TuseProductController(product_id, streams, proxy_name)
 
         try:
-            product.start()
-            product.configure()
+            yield product.start()
+            yield product.configure()
         except Exception as error:
             errmsg = "Error on TuseProductController start/configure: {!s}".format(error)
-            return ("fail", errmsg)
+            #return ("fail", errmsg)
+            raise Return( ("fail", errmsg)  )
 
         self._products[product_id] = product
-        return ("ok",)
+        #return ("ok",)
+        raise Return( ("ok",) )
 
     @request(Str())
     @return_reply()
@@ -423,49 +431,6 @@ class TuseMasterController(AsyncDeviceServer):
 
 
 
-# def update_callback(items):
-#     # "items" is a dictionary of that form:
-#     # {
-#     #     "msg_pattern": "namespace_0d36fc36-7a42-4c0d-8f6f-f06c78547849:*",
-#     #     "msg_channel": "namespace_0d36fc36-7a42-4c0d-8f6f-f06c78547849:fbfuse_1_device_status",
-#     #     "msg_data": {
-#     #         "status": "nominal",
-#     #         "timestamp": 1512748032.71123,
-#     #         "value": "ok",
-#     #         "name": "fbfuse_1_device_status",
-#     #         "received_timestamp": 1512748067.365858
-#     #     }
-#     # }
-#     print json.dumps(items, indent=4)
-
-
-class CallbackMessageData(dict):
-    """
-    Convenience class to parse and manipulate dictionaries passed as the argument of the
-    callback function of a KATPortalClient instance.
-
-    Example: if "items" is the argument to the callback function, then we can write
-        mdata = CallbackMessageData(items)
-        mdata.name  # sensor name
-        mdata.value # sensor value
-    """
-    def __init__(self, items):
-        super(CallbackMessageData, self).__init__(items["msg_data"])
-
-    def __getattr__(self, name):
-        return self[name]
-
-
-
-def test_callback(items):
-    log.debug("CALLBACK")
-    log.debug(json.dumps(items, indent=4))
-    mdata = CallbackMessageData(items)
-    log.debug("name: {}".format(mdata.name))
-    log.debug("value: {}".format(mdata.value))
-
-
-
 
 class TuseProductController(object):
     """
@@ -494,28 +459,44 @@ class TuseProductController(object):
         self._server = None
         self._portal_client = None
         self._namespace = "namespace_{!s}".format(uuid.uuid4())
+        self._callback_handler = None
 
     @property
     def capturing(self):
         return self._capturing
 
+    @coroutine
     def start(self):
         """
         @brief      FIXME
         """
+        log.debug("TuseProductController::start() has been called")
+
         # Through this we can retrieve sensor values from other proxies
+        # NOTE: at first, we do not set a callback function, because
+        # we first need to find out the proxy name of FBFUSE to do so
         self._portal_client = KATPortalClient(
             self._streams["cam.http"]["camdata"],
-            on_update_callback=test_callback,
+            on_update_callback=None,
             logger=log)
 
-    def _update_callback(self, items):
-        log.debug("CALLBACK")
-        log.debug(json.dumps(items, indent=4))
-        #if items["msg_data"]["name"] == self._fbfuse_proxy_name + "subarray_product_id":
-        #    self._fbfuse_product_id = items["msg_data"]["value"]
-        #    self._portal_client.unsubscribe(self._namespace)
+        self._fbfuse_proxy_name = yield self._sensor_lookup("fbfuse", None)
+        log.debug("Retrieved FBFUSE proxy name: {:s}".format(self._fbfuse_proxy_name))
 
+        # Now that we know the proxy name, we can setup the TuseCallbackHandler
+        # It is an object that has the interface of a function 
+        # (i.e. it has a __call__ method)
+        self._callback_handler = TuseCallbackHandler(
+            product_controller=self,
+            fbfuse_proxy_name=self._fbfuse_proxy_name)
+
+        # And now update the callback function of the portal client
+        # NOTE: we could create a new portal client instance,
+        # this might be cleaner than editing "private" class members
+        self._portal_client._on_update = self._callback_handler
+
+        # And don't forget to connect before moving on  
+        yield self._portal_client.connect()
 
     @coroutine
     def _sensor_lookup(self, component, sensor):
@@ -540,48 +521,23 @@ class TuseProductController(object):
         # name = yield self._sensor_lookup(...)
         raise Return(name)
 
-    # This needs to be a coroutine because it contains yield statement(s)
     @coroutine
     def configure(self):
         """
         @brief      Configure the nodes for processing
         """
-        # "This is just the way it behaves man" (E.Barr 08/12/17)
-        # This returns the proxy name of FBFUSE (often, but not necessarily
-        # the same as ours)
-        # A proxy name looks like: fbfuse_1
-        self._fbfuse_proxy_name = yield self._sensor_lookup("fbfuse", None)
-
-        yield self._portal_client.connect()
+        log.debug("TuseProductController::start() has been called")
 
         # Subscribe to sensors starting by "fbfuse_{PROXY_NAME}", e.g. "fbfuse_1"
         result = yield self._portal_client.subscribe(self._namespace, self._fbfuse_proxy_name + '*')
         log.debug("Result of subscription to namespace '{}': {}".format(self._namespace, result))
 
-        # Prepare to query for: self._fbfuse_proxy_name
+        # Set sampling strategy for {FBFUSE_PROXY_NAME}_device_status
         sname = self._fbfuse_proxy_name + "_device_status"
         result = yield self._portal_client.set_sampling_strategies(
             self._namespace, sname, "event")
         log.debug("Set sampling strategies result: {}".format(result))
 
-
-        #log.debug("Fetching details of sensor: {}".format(sname))
-        #details = yield self._portal_client.sensor_detail(sname)
-        #for key, val in details.items():
-        #    log.debug("    {}: {}".format(key, val))
-
-        # yield self._portal_client.connect()
-        #
-        # # Subscribe to sensor fbfuse_N_device_status
-        # namespace = "namespace_{!s}".format(uuid.uuid4())
-        # result = yield self._portal_client.subscribe(namespace)
-        # log.debug("Result of subscription to namespace '{}': {}".format(namespace, result))
-        #
-        # # Set sampling strategy
-        # result = yield self._portal_client.set_sampling_strategies(
-        #     namespace, sname, 'period 3.0'
-        #     )
-        # log.debug("Set sampling strategies result: {}".format(result))
 
     def deconfigure(self):
         """
@@ -593,13 +549,13 @@ class TuseProductController(object):
         """
         @brief      Begin a data capture
         """
-        pass
+        log.info("capture_init() was requested")
 
     def capture_done(self):
         """
         @brief      End a data capture
         """
-        pass
+        log.info("capture_done() was requested")
 
 
 @tornado.gen.coroutine
